@@ -81,7 +81,7 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
     <p class="best" id="pen"></p>
     <p class="best" id="best"></p>
     <div class="share" id="sharetext"></div>
-    <button type="button" class="main" id="copy">Скопировать и отправить другу</button>
+    <button type="button" class="main" id="copy">Отправить другу</button>
   </div>
 </div>
 
@@ -107,35 +107,35 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
       pen: 'Время {a} сек + штраф {b} сек (звёзды и подсказки).', bHint: 'Подсказка (+1 сек за клетку)', bTilt: 'Наклон телефона', starsLbl: 'Звёзды: {a}/3', tiltNo: 'Датчик наклона не отвечает. Откройте игру в обычном браузере по ссылке или играйте пальцем.',
       bDaily: 'Лабиринт дня', bRnd: 'Случайный', bReset: 'Заново', done: 'Готово: {a} сек',
       first: 'Первый результат на этом лабиринте.', rec: 'Новый рекорд! Раньше было {a} сек.', mine: 'Твой рекорд на этом лабиринте: {a} сек.',
-      share: '{a}: прошёл за {b} сек, звёзд: {c}/3. Сможешь быстрее?', copy: 'Скопировать и отправить другу', copied: 'Скопировано',
+      share: '{a}: прошёл за {b} сек, звёзд: {c}/3. Сможешь быстрее?', copy: 'Отправить другу', copied: 'Скопировано',
       sel: 'Текст выделен, нажми «Копировать»', aria: 'Игровое поле лабиринта' },
     en: { name: 'Eng', title: 'Maze of the Day', daily: 'Maze of the Day #{a}, {b}', rnd: 'Random maze #{a}',
       hint: 'Press anywhere on the board and drag your finger. The ball moves the same way. Collect 3 pink stars and reach the yellow star.',
       pen: 'Time {a} sec + {b} sec penalty (stars and hints).', bHint: 'Hint (+1 sec per cell)', bTilt: 'Tilt control', starsLbl: 'Stars: {a}/3', tiltNo: 'Tilt sensor is not responding. Open the game in a regular browser or play with your finger.',
       bDaily: 'Maze of the Day', bRnd: 'Random', bReset: 'Restart', done: 'Done: {a} sec',
       first: 'First result on this maze.', rec: 'New record! It was {a} sec.', mine: 'Your best on this maze: {a} sec.',
-      share: '{a}: finished in {b} sec, stars: {c}/3. Can you beat it?', copy: 'Copy and send to a friend', copied: 'Copied',
+      share: '{a}: finished in {b} sec, stars: {c}/3. Can you beat it?', copy: 'Send to a friend', copied: 'Copied',
       sel: 'Text selected, press Copy', aria: 'Maze board' },
     uz: { name: 'Oʻz', title: 'Kun labirinti', daily: 'Kun labirinti № {a}, {b}', rnd: 'Tasodifiy labirint № {a}',
       hint: 'Maydonning istalgan joyiga bosing va barmog‘ingizni yon tomonga suring. Sharcha shu tomonga yuradi. 3 ta pushti yulduzchani yig‘ing va sariq yulduzchaga yeting.',
       pen: 'Vaqt {a} soniya + {b} soniya jarima (yulduzlar va maslahatlar).', bHint: 'Maslahat (+1 soniya har katak)', bTilt: 'Telefonni egish', starsLbl: 'Yulduzlar: {a}/3', tiltNo: 'Egilish datchigi javob bermayapti. O‘yinni oddiy brauzerda oching yoki barmoq bilan o‘ynang.',
       bDaily: 'Kun labirinti', bRnd: 'Tasodifiy', bReset: 'Qaytadan', done: 'Tayyor: {a} soniya',
       first: 'Bu labirintdagi birinchi natija.', rec: 'Yangi rekord! Avval {a} soniya edi.', mine: 'Bu labirintdagi rekordingiz: {a} soniya.',
-      share: '{a}: {b} soniyada o‘tdim, yulduzlar: {c}/3. Sen tezroq o‘ta olasanmi?', copy: 'Nusxalash va do‘stga yuborish', copied: 'Nusxalandi',
+      share: '{a}: {b} soniyada o‘tdim, yulduzlar: {c}/3. Sen tezroq o‘ta olasanmi?', copy: 'Do‘stga yuborish', copied: 'Nusxalandi',
       sel: 'Matn belgilandi, «Nusxalash»ni bosing', aria: 'Labirint maydoni' },
     tg: { name: 'Тоҷ', title: 'Лабиринти рӯз', daily: 'Лабиринти рӯз № {a}, {b}', rnd: 'Лабиринти тасодуфӣ № {a}',
       hint: 'Дар ҳар ҷои майдон пахш кунед ва ангуштро ба тараф кашед. Тӯб ҳамон тараф меравад. 3 ситораи гулобиро ҷамъ кунед ва то ситораи зард расед.',
       pen: 'Вақт {a} сония + ҷарима {b} сония (ситораҳо ва ишораҳо).', bHint: 'Ишора (+1 сония барои ҳар хона)', bTilt: 'Моил кардани телефон', starsLbl: 'Ситораҳо: {a}/3', tiltNo: 'Датчики моил ҷавоб намедиҳад. Бозиро дар браузери оддӣ кушоед ё бо ангушт бозӣ кунед.',
       bDaily: 'Лабиринти рӯз', bRnd: 'Тасодуфӣ', bReset: 'Аз нав', done: 'Тайёр: {a} сония',
       first: 'Натиҷаи аввал дар ин лабиринт.', rec: 'Рекорди нав! Пештар {a} сония буд.', mine: 'Рекорди шумо дар ин лабиринт: {a} сония.',
-      share: '{a}: дар {b} сония гузаштам, ситораҳо: {c}/3. Метавонӣ тезтар гузарӣ?', copy: 'Нусха гирифтан ва ба дӯст фиристодан', copied: 'Нусха шуд',
+      share: '{a}: дар {b} сония гузаштам, ситораҳо: {c}/3. Метавонӣ тезтар гузарӣ?', copy: 'Ба дӯст фиристодан', copied: 'Нусха шуд',
       sel: 'Матн интихоб шуд, «Нусха гирифтан»-ро пахш кунед', aria: 'Майдони лабиринт' },
     kk: { name: 'Қаз', title: 'Күн лабиринті', daily: 'Күн лабиринті № {a}, {b}', rnd: 'Кездейсоқ лабиринт № {a}',
       hint: 'Алаңның кез келген жерін басып, саусағыңызды бір жаққа жылжытыңыз. Шар сол жаққа жүреді. 3 қызғылт жұлдызды жинап, сары жұлдызға жетіңіз.',
       pen: 'Уақыт {a} сек + {b} сек айып (жұлдыздар мен кеңестер).', bHint: 'Кеңес (+1 сек әр ұяшық)', bTilt: 'Телефонды еңкейту', starsLbl: 'Жұлдыздар: {a}/3', tiltNo: 'Еңкею датчигі жауап бермейді. Ойынды кәдімгі браузерде ашыңыз немесе саусақпен ойнаңыз.',
       bDaily: 'Күн лабиринті', bRnd: 'Кездейсоқ', bReset: 'Қайта', done: 'Дайын: {a} сек',
       first: 'Бұл лабиринттегі алғашқы нәтиже.', rec: 'Жаңа рекорд! Бұрын {a} сек болды.', mine: 'Бұл лабиринттегі рекордыңыз: {a} сек.',
-      share: '{a}: {b} секундта өттім, жұлдыздар: {c}/3. Сен тезірек өте аласың ба?', copy: 'Көшіріп, досқа жіберу', copied: 'Көшірілді',
+      share: '{a}: {b} секундта өттім, жұлдыздар: {c}/3. Сен тезірек өте аласың ба?', copy: 'Досқа жіберу', copied: 'Көшірілді',
       sel: 'Мәтін таңдалды, «Көшіру» басыңыз', aria: 'Лабиринт алаңы' }
   };
   var ORDER = ['ru', 'en', 'uz', 'tg', 'kk'], LANG = 'en';
@@ -255,10 +255,11 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
   }
 
   function dateSeed() {
-    var d = new Date();
-    var no = Math.round((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(2026, 9, 22)) / 86400000) + 1;
-    return { n: d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(), no: no,
-             txt: ('0' + d.getDate()).slice(-2) + '.' + ('0' + (d.getMonth() + 1)).slice(-2) };
+    var d = new Date(Date.now() + 3 * 3600000); // Москва (UTC+3), смена карты в полночь по МСК
+    var Y = d.getUTCFullYear(), M = d.getUTCMonth(), D = d.getUTCDate();
+    var no = Math.round((Date.UTC(Y, M, D) - Date.UTC(2026, 9, 22)) / 86400000) + 1;
+    return { n: Y * 10000 + (M + 1) * 100 + D, no: no,
+             txt: ('0' + D).slice(-2) + '.' + ('0' + (M + 1)).slice(-2) };
   }
 
   function resize() {
@@ -451,6 +452,12 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
       var r = document.createRange(); r.selectNodeContents(el);
       var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
       cb.textContent = t('sel');
+    }
+    var tw = window.Telegram && Telegram.WebApp;
+    if (tw && tw.initData && tw.openTelegramLink) {
+      var bot = 'https://t.me/labirint_dnya_bot';
+      var txt = el.textContent.replace(bot, '').trim();
+      try { tw.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(bot) + '&text=' + encodeURIComponent(txt)); return; } catch (e0) {}
     }
     try { navigator.clipboard.writeText(el.textContent).then(function () { cb.textContent = t('copied'); }, fb); } catch (e) { fb(); }
   });
