@@ -89,7 +89,7 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
 (function () {
   var W = 7, H = 10;
   var T = 0.14, R = 0.28;           // толщина стенки и радиус шарика в клетках
-  var VMAX = 4.4;                   // максимальная скорость, клеток в секунду
+  var VMAX = 6.5;                   // максимальная скорость, клеток в секунду
   var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
   var segs = [], seed = 1, label = '', mode = 'daily', mazeKey = '';
   var ball = { x: 0.5, y: 0.5 }, vel = { x: 0, y: 0 };
@@ -176,7 +176,11 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
   function labelText() { return lab.kind === 'daily' ? t('daily', lab.no, lab.txt) : t('rnd', lab.n); }
   function renderResult() {
     if (!res) return;
-    var link = ''; try { link = location.href; } catch (e) {}
+    var link = '';
+    try {
+      var inTg = !!(window.Telegram && Telegram.WebApp && Telegram.WebApp.initData);
+      link = inTg ? 'https://t.me/labirint_dnya_bot' : (/^https?:$/.test(location.protocol) ? location.origin + location.pathname : '');
+    } catch (e) {}
     if (/claudeusercontent\.com|^(file|blob|about):/.test(link)) link = '';
     document.getElementById('rtitle').textContent = t('done', res.time.toFixed(1));
     document.getElementById('best').textContent = res.best === null ? t('first') : (res.isBest ? t('rec', res.best.toFixed(1)) : t('mine', res.best.toFixed(1)));
@@ -322,7 +326,7 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
           if ((tx || ty) && !started) { started = true; t0 = ts; }
         }
       } else if (joy) {
-        var vx = joy.cx - joy.ox, vy = joy.cy - joy.oy, m = Math.sqrt(vx * vx + vy * vy), k = Math.min(1, m / 55);
+        var vx = joy.cx - joy.ox, vy = joy.cy - joy.oy, m = Math.sqrt(vx * vx + vy * vy), k = Math.min(1, m / 32);
         if (m > 3) { vel.x = (vx / m) * k * VMAX; vel.y = (vy / m) * k * VMAX; if (!started) { started = true; t0 = ts; } }
         else { vel.x = 0; vel.y = 0; }
       } else { vel.x *= 0.6; vel.y *= 0.6; }
