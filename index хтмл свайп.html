@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#12161D">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<title>Лабиринт дня</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700&family=Rubik:wght@700;800&display=swap">
+<style>
+/* Концепт: игра на одном экране телефона. Сверху название и таймер, ниже поле, под ним кнопки и результат с готовой фразой, чтобы поделиться. */
+:root {
+  --bg: #EDF0F4; --fg: #1B2230; --muted: #5B6577; --line: #D3D9E2; --panel: #FFFFFF; --accent: #D9531C;
+  --ink: #22304A; --orange: #F2733A; --teal: #1F9E96; --yellow: #F5C242; --sheet: #FFFFFF;
+  --display: "Rubik", "Arial Black", system-ui, sans-serif; --text: "Nunito", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #12161D; --fg: #E8ECF2; --muted: #9AA4B5; --line: #2B3342; --panel: #1B212C; --accent: #FF8A57; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #12161D; --fg: #E8ECF2; --muted: #9AA4B5; --line: #2B3342; --panel: #1B212C; --accent: #FF8A57; color-scheme: dark; }
+html, body { overscroll-behavior: none; }
+body { background: var(--bg); color: var(--fg); font-family: var(--text); font-size: 16px; line-height: 1.45;
+  padding-block: 16px 36px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 460px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+.head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+h1 { font-family: var(--display); font-weight: 800; font-size: 24px; line-height: 1.1; margin: 0; }
+.sub { margin: 2px 0 0; font-size: 13px; color: var(--muted); font-weight: 700; }
+.timer { font-family: var(--display); font-weight: 800; font-size: 28px; font-variant-numeric: tabular-nums; min-width: 4.6ch; text-align: right; }
+.field { background: var(--sheet); border: 1px solid var(--line); border-radius: 16px; padding: 10px; }
+canvas { display: block; width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; border-radius: 8px; }
+.hint { margin: 0; font-size: 14px; color: var(--muted); text-align: center; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 15px; border-radius: 99px; padding: 10px 16px; cursor: pointer; border: 1px solid var(--line); background: transparent; color: var(--fg); flex: 1 1 auto; }
+button.main { background: var(--accent); border-color: var(--accent); color: #1B2230; }
+button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.result { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+.result h2 { font-family: var(--display); font-weight: 800; font-size: 20px; margin: 0; }
+.result p { margin: 0; font-size: 15px; }
+.share { background: var(--bg); border-radius: 10px; padding: 10px 12px; font-size: 14px; word-break: break-word; user-select: all; }
+.best { color: var(--muted); font-size: 14px; }
+[hidden] { display: none !important; }
+.bar { display: flex; gap: 8px; flex-wrap: wrap; }
+.bar button { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; font-size: 13px; }
+.row button { padding: 10px 12px; font-size: 14px; }
+.stars { font-size: 13px; font-weight: 700; color: var(--muted); text-align: right; }
+.warn { color: var(--accent); font-weight: 700; }
+button.on { background: var(--accent); border-color: var(--accent); color: #1B2230; }
+.langs { display: flex; flex-wrap: wrap; gap: 6px; }
+.langs button { flex: 0 0 auto; padding: 5px 12px; font-size: 13px; }
+.langs button.on { background: var(--accent); border-color: var(--accent); color: #1B2230; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="langs" id="langs"></div>
+  <div class="head">
+    <div>
+      <h1 id="ttl">Лабиринт дня</h1>
+      <p class="sub" id="label"></p>
+    </div>
+    <div><div class="timer" id="timer" aria-live="off">0.0</div><div class="stars" id="stars"></div></div>
+  </div>
+
+  <div class="bar">
+    <button type="button" id="hintbtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.7.6 1 1.3 1 2.1h5c0-.8.3-1.5 1-2.1A6 6 0 0 0 12 3z"/></svg><span id="hintlbl">Подсказка</span></button>
+    <button type="button" id="tilt"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2" transform="rotate(20 12 12)"/><path d="M12 18h.01"/></svg><span id="tiltlbl">Наклон</span></button>
+  </div>
+  <div class="field"><canvas id="cv" aria-label="Игровое поле лабиринта"></canvas></div>
+  <p class="hint" id="hint">Нажми в любом месте поля и веди пальцем в сторону. Шарик едет туда же. Дойди до звезды.</p>
+
+  <p class="hint warn" id="msg" hidden></p>
+  <div class="row">
+    <button type="button" id="daily" class="main">Лабиринт дня</button>
+    <button type="button" id="random">Случайный</button>
+    <button type="button" id="reset">Заново</button>
+  </div>
+
+  <div class="result" id="result" hidden>
+    <h2 id="rtitle">Готово!</h2>
+    <p class="best" id="pen"></p>
+    <p class="best" id="best"></p>
+    <div class="share" id="sharetext"></div>
+    <button type="button" class="main" id="copy">Скопировать и отправить другу</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  var W = 7, H = 10;
+  var T = 0.14, R = 0.28;           // толщина стенки и радиус шарика в клетках
+  var VMAX = 4.4;                   // максимальная скорость, клеток в секунду
+  var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+  var segs = [], seed = 1, label = '', mode = 'daily', mazeKey = '';
+  var ball = { x: 0.5, y: 0.5 }, vel = { x: 0, y: 0 };
+  var started = false, finished = false, t0 = 0, elapsed = 0, last = 0;
+  var cell = 40, dpr = 1;
+  var joy = null;                   // {id, ox, oy, cx, cy}
+  var lab = { kind: 'daily', no: 1, txt: '', n: 0 }, res = null;
+  var hintPath = null, hintUntil = 0, hintCost = 0, GH = null, GV = null;
+  var stars = [], starsGot = 0, ctrl = 'finger', tilt = { got: false, g: 0, b: 0, b0: null };
+
+  // Тексты на разных языках. Короткие фразы нужно проверить с носителями языка.
+  var I18N = {
+    ru: { name: 'Рус', title: 'Лабиринт дня', daily: 'Лабиринт дня № {a}, {b}', rnd: 'Случайный лабиринт № {a}',
+      hint: 'Нажми в любом месте поля и веди пальцем в сторону. Шарик едет туда же. Собери 3 розовые звёздочки и дойди до жёлтой звезды.',
+      pen: 'Время {a} сек + штраф {b} сек (звёзды и подсказки).', bHint: 'Подсказка (+1 сек за клетку)', bTilt: 'Наклон телефона', starsLbl: 'Звёзды: {a}/3', tiltNo: 'Датчик наклона не отвечает. Откройте игру в обычном браузере по ссылке или играйте пальцем.',
+      bDaily: 'Лабиринт дня', bRnd: 'Случайный', bReset: 'Заново', done: 'Готово: {a} сек',
+      first: 'Первый результат на этом лабиринте.', rec: 'Новый рекорд! Раньше было {a} сек.', mine: 'Твой рекорд на этом лабиринте: {a} сек.',
+      share: '{a}: прошёл за {b} сек, звёзд: {c}/3. Сможешь быстрее?', copy: 'Скопировать и отправить другу', copied: 'Скопировано',
+      sel: 'Текст выделен, нажми «Копировать»', aria: 'Игровое поле лабиринта' },
+    en: { name: 'Eng', title: 'Maze of the Day', daily: 'Maze of the Day #{a}, {b}', rnd: 'Random maze #{a}',
+      hint: 'Press anywhere on the board and drag your finger. The ball moves the same way. Collect 3 pink stars and reach the yellow star.',
+      pen: 'Time {a} sec + {b} sec penalty (stars and hints).', bHint: 'Hint (+1 sec per cell)', bTilt: 'Tilt control', starsLbl: 'Stars: {a}/3', tiltNo: 'Tilt sensor is not responding. Open the game in a regular browser or play with your finger.',
+      bDaily: 'Maze of the Day', bRnd: 'Random', bReset: 'Restart', done: 'Done: {a} sec',
+      first: 'First result on this maze.', rec: 'New record! It was {a} sec.', mine: 'Your best on this maze: {a} sec.',
+      share: '{a}: finished in {b} sec, stars: {c}/3. Can you beat it?', copy: 'Copy and send to a friend', copied: 'Copied',
+      sel: 'Text selected, press Copy', aria: 'Maze board' },
+    uz: { name: 'Oʻz', title: 'Kun labirinti', daily: 'Kun labirinti № {a}, {b}', rnd: 'Tasodifiy labirint № {a}',
+      hint: 'Maydonning istalgan joyiga bosing va barmog‘ingizni yon tomonga suring. Sharcha shu tomonga yuradi. 3 ta pushti yulduzchani yig‘ing va sariq yulduzchaga yeting.',
+      pen: 'Vaqt {a} soniya + {b} soniya jarima (yulduzlar va maslahatlar).', bHint: 'Maslahat (+1 soniya har katak)', bTilt: 'Telefonni egish', starsLbl: 'Yulduzlar: {a}/3', tiltNo: 'Egilish datchigi javob bermayapti. O‘yinni oddiy brauzerda oching yoki barmoq bilan o‘ynang.',
+      bDaily: 'Kun labirinti', bRnd: 'Tasodifiy', bReset: 'Qaytadan', done: 'Tayyor: {a} soniya',
+      first: 'Bu labirintdagi birinchi natija.', rec: 'Yangi rekord! Avval {a} soniya edi.', mine: 'Bu labirintdagi rekordingiz: {a} soniya.',
+      share: '{a}: {b} soniyada o‘tdim, yulduzlar: {c}/3. Sen tezroq o‘ta olasanmi?', copy: 'Nusxalash va do‘stga yuborish', copied: 'Nusxalandi',
+      sel: 'Matn belgilandi, «Nusxalash»ni bosing', aria: 'Labirint maydoni' },
+    tg: { name: 'Тоҷ', title: 'Лабиринти рӯз', daily: 'Лабиринти рӯз № {a}, {b}', rnd: 'Лабиринти тасодуфӣ № {a}',
+      hint: 'Дар ҳар ҷои майдон пахш кунед ва ангуштро ба тараф кашед. Тӯб ҳамон тараф меравад. 3 ситораи гулобиро ҷамъ кунед ва то ситораи зард расед.',
+      pen: 'Вақт {a} сония + ҷарима {b} сония (ситораҳо ва ишораҳо).', bHint: 'Ишора (+1 сония барои ҳар хона)', bTilt: 'Моил кардани телефон', starsLbl: 'Ситораҳо: {a}/3', tiltNo: 'Датчики моил ҷавоб намедиҳад. Бозиро дар браузери оддӣ кушоед ё бо ангушт бозӣ кунед.',
+      bDaily: 'Лабиринти рӯз', bRnd: 'Тасодуфӣ', bReset: 'Аз нав', done: 'Тайёр: {a} сония',
+      first: 'Натиҷаи аввал дар ин лабиринт.', rec: 'Рекорди нав! Пештар {a} сония буд.', mine: 'Рекорди шумо дар ин лабиринт: {a} сония.',
+      share: '{a}: дар {b} сония гузаштам, ситораҳо: {c}/3. Метавонӣ тезтар гузарӣ?', copy: 'Нусха гирифтан ва ба дӯст фиристодан', copied: 'Нусха шуд',
+      sel: 'Матн интихоб шуд, «Нусха гирифтан»-ро пахш кунед', aria: 'Майдони лабиринт' },
+    kk: { name: 'Қаз', title: 'Күн лабиринті', daily: 'Күн лабиринті № {a}, {b}', rnd: 'Кездейсоқ лабиринт № {a}',
+      hint: 'Алаңның кез келген жерін басып, саусағыңызды бір жаққа жылжытыңыз. Шар сол жаққа жүреді. 3 қызғылт жұлдызды жинап, сары жұлдызға жетіңіз.',
+      pen: 'Уақыт {a} сек + {b} сек айып (жұлдыздар мен кеңестер).', bHint: 'Кеңес (+1 сек әр ұяшық)', bTilt: 'Телефонды еңкейту', starsLbl: 'Жұлдыздар: {a}/3', tiltNo: 'Еңкею датчигі жауап бермейді. Ойынды кәдімгі браузерде ашыңыз немесе саусақпен ойнаңыз.',
+      bDaily: 'Күн лабиринті', bRnd: 'Кездейсоқ', bReset: 'Қайта', done: 'Дайын: {a} сек',
+      first: 'Бұл лабиринттегі алғашқы нәтиже.', rec: 'Жаңа рекорд! Бұрын {a} сек болды.', mine: 'Бұл лабиринттегі рекордыңыз: {a} сек.',
+      share: '{a}: {b} секундта өттім, жұлдыздар: {c}/3. Сен тезірек өте аласың ба?', copy: 'Көшіріп, досқа жіберу', copied: 'Көшірілді',
+      sel: 'Мәтін таңдалды, «Көшіру» басыңыз', aria: 'Лабиринт алаңы' }
+  };
+  var ORDER = ['ru', 'en', 'uz', 'tg', 'kk'], LANG = 'en';
+  function t(k, a, b, c) { return I18N[LANG][k].replace('{a}', a).replace('{b}', b).replace('{c}', c); }
+  function detect() {
+    var s = ''; try { s = localStorage.getItem('labirint-lang') || ''; } catch (e) {}
+    if (I18N[s]) return s;
+    var n = ((navigator.language || 'en') + '').toLowerCase().slice(0, 2);
+    return I18N[n] ? n : 'en';
+  }
+  function showStars() {
+    document.getElementById('stars').textContent = t('starsLbl', starsGot) + (hintCost ? '  +' + hintCost : '');
+  }
+  function findPath() {
+    // кратчайший путь по клеткам от шарика до финиша (поиск в ширину)
+    var sx = Math.max(0, Math.min(W - 1, Math.floor(ball.x))), sy = Math.max(0, Math.min(H - 1, Math.floor(ball.y)));
+    var prev = {}, q = [[sx, sy]], key = function (x, y) { return x + ',' + y; };
+    prev[key(sx, sy)] = null;
+    while (q.length) {
+      var c = q.shift(), cx = c[0], cy = c[1];
+      if (cx === W - 1 && cy === H - 1) break;
+      var nb = [];
+      if (cx < W - 1 && !GV[cy][cx + 1]) nb.push([cx + 1, cy]);
+      if (cx > 0 && !GV[cy][cx]) nb.push([cx - 1, cy]);
+      if (cy > 0 && !GH[cy][cx]) nb.push([cx, cy - 1]);
+      if (cy < H - 1 && !GH[cy + 1][cx]) nb.push([cx, cy + 1]);
+      for (var i = 0; i < nb.length; i++) {
+        var k = key(nb[i][0], nb[i][1]);
+        if (!(k in prev)) { prev[k] = c; q.push(nb[i]); }
+      }
+    }
+    var end = key(W - 1, H - 1);
+    if (!(end in prev)) return null;
+    var path = [], cur = [W - 1, H - 1];
+    while (cur) { path.unshift(cur); cur = prev[key(cur[0], cur[1])]; }
+    return path;
+  }
+  function labelText() { return lab.kind === 'daily' ? t('daily', lab.no, lab.txt) : t('rnd', lab.n); }
+  function renderResult() {
+    if (!res) return;
+    var link = ''; try { link = location.href; } catch (e) {}
+    if (/claudeusercontent\.com|^(file|blob|about):/.test(link)) link = '';
+    document.getElementById('rtitle').textContent = t('done', res.time.toFixed(1));
+    document.getElementById('best').textContent = res.best === null ? t('first') : (res.isBest ? t('rec', res.best.toFixed(1)) : t('mine', res.best.toFixed(1)));
+    document.getElementById('sharetext').textContent = (t('share', labelText(), res.time.toFixed(1), res.stars) + ' ' + link).trim();
+    document.getElementById('pen').textContent = res.pen ? t('pen', res.base.toFixed(1), res.pen) : '';
+    document.getElementById('copy').textContent = t('copy');
+  }
+  function applyLang(l) {
+    LANG = l;
+    try { localStorage.setItem('labirint-lang', l); } catch (e) {}
+    document.documentElement.lang = l;
+    document.title = t('title');
+    document.getElementById('ttl').textContent = t('title');
+    document.getElementById('hint').textContent = t('hint');
+    document.getElementById('daily').textContent = t('bDaily');
+    document.getElementById('random').textContent = t('bRnd');
+    document.getElementById('reset').textContent = t('bReset');
+    document.getElementById('tiltlbl').textContent = t('bTilt');
+    document.getElementById('hintlbl').textContent = t('bHint').split(' (')[0];
+    document.getElementById('hintbtn').title = t('bHint');
+    document.getElementById('tilt').title = t('bTilt');
+    showStars();
+    document.getElementById('cv').setAttribute('aria-label', t('aria'));
+    document.getElementById('label').textContent = labelText();
+    var box = document.getElementById('langs'); box.innerHTML = '';
+    ORDER.forEach(function (c) {
+      var b = document.createElement('button'); b.type = 'button'; b.textContent = I18N[c].name;
+      if (c === LANG) b.className = 'on';
+      b.addEventListener('click', function () { applyLang(c); });
+      box.appendChild(b);
+    });
+    renderResult();
+  }
+
+  function rng() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
+
+  function build(s) {
+    seed = (s % 2147483646) + 1;
+    var hw = [], vw = [], seen = [], y, x;
+    for (y = 0; y <= H; y++) { hw[y] = []; for (x = 0; x < W; x++) hw[y][x] = true; }
+    for (y = 0; y < H; y++) { vw[y] = []; seen[y] = []; for (x = 0; x <= W; x++) vw[y][x] = true; for (x = 0; x < W; x++) seen[y][x] = false; }
+    var st = [[0, 0]]; seen[0][0] = true;
+    while (st.length) {
+      var c = st[st.length - 1], cx = c[0], cy = c[1], o = [];
+      if (cx > 0 && !seen[cy][cx - 1]) o.push([cx - 1, cy, 0]);
+      if (cx < W - 1 && !seen[cy][cx + 1]) o.push([cx + 1, cy, 1]);
+      if (cy > 0 && !seen[cy - 1][cx]) o.push([cx, cy - 1, 2]);
+      if (cy < H - 1 && !seen[cy + 1][cx]) o.push([cx, cy + 1, 3]);
+      if (!o.length) { st.pop(); continue; }
+      var p = o[Math.floor(rng() * o.length)];
+      if (p[2] === 0) vw[cy][cx] = false; else if (p[2] === 1) vw[cy][cx + 1] = false;
+      else if (p[2] === 2) hw[cy][cx] = false; else hw[cy + 1][cx] = false;
+      seen[p[1]][p[0]] = true; st.push([p[0], p[1]]);
+    }
+    // несколько лишних проходов, чтобы путей было больше одного
+    for (var k = 0; k < 6; k++) {
+      var rx = 1 + Math.floor(rng() * (W - 1)), ry = Math.floor(rng() * H);
+      vw[ry][rx] = false;
+    }
+    GH = hw; GV = vw;
+    segs = [];
+    for (y = 0; y <= H; y++) for (x = 0; x < W; x++) if (hw[y][x]) segs.push([x, y, x + 1, y, y === 0 || y === H]);
+    for (y = 0; y < H; y++) for (x = 0; x <= W; x++) if (vw[y][x]) segs.push([x, y, x, y + 1, x === 0 || x === W]);
+    stars = []; var tries = 0;
+    while (stars.length < 3 && tries < 300) {
+      tries++;
+      var sx = Math.floor(rng() * W), sy = Math.floor(rng() * H);
+      if ((sx === 0 && sy === 0) || (sx === W - 1 && sy === H - 1)) continue;
+      if (stars.some(function (q) { return q[0] === sx + 0.5 && q[1] === sy + 0.5; })) continue;
+      stars.push([sx + 0.5, sy + 0.5, false]);
+    }
+  }
+
+  function dateSeed() {
+    var d = new Date();
+    var no = Math.round((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(2026, 9, 22)) / 86400000) + 1;
+    return { n: d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(), no: no,
+             txt: ('0' + d.getDate()).slice(-2) + '.' + ('0' + (d.getMonth() + 1)).slice(-2) };
+  }
+
+  function resize() {
+    var w = cv.parentElement.clientWidth - 20;
+    if (w < 100) w = 100;
+    cell = w / W; dpr = window.devicePixelRatio || 1;
+    cv.style.width = w + 'px'; cv.style.height = (cell * H) + 'px';
+    cv.width = Math.round(w * dpr); cv.height = Math.round(cell * H * dpr);
+    draw();
+  }
+
+  function fmt(t) { return t.toFixed(1); }
+
+  function reset(keepResult) {
+    ball.x = 0.5; ball.y = 0.5; vel.x = 0; vel.y = 0;
+    started = false; finished = false; elapsed = 0; joy = null;
+    stars.forEach(function (q) { q[2] = false; }); starsGot = 0; tilt.b0 = tilt.got ? tilt.b : null;
+    hintCost = 0; hintPath = null; showStars();
+    document.getElementById('timer').textContent = '0.0';
+    if (!keepResult) { document.getElementById('result').hidden = true; res = null; }
+    draw();
+  }
+
+  function newMaze(m) {
+    mode = m;
+    if (m === 'daily') { var ds = dateSeed(); build(ds.n); lab = { kind: 'daily', no: ds.no, txt: ds.txt, n: 0 }; mazeKey = 'day-' + ds.n; }
+    else { var s = Math.floor(Math.random() * 1000000) + 1; build(s); lab = { kind: 'rnd', no: 0, txt: '', n: s }; mazeKey = 'rnd-' + s; }
+    document.getElementById('label').textContent = labelText();
+    reset(false);
+  }
+
+  function nearest(px, py, s) {
+    var ax = s[0], ay = s[1], bx = s[2], by = s[3], dx = bx - ax, dy = by - ay;
+    var t = ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy);
+    t = Math.max(0, Math.min(1, t));
+    return [ax + t * dx, ay + t * dy];
+  }
+
+  function step(dt) {
+    ball.x += vel.x * dt; ball.y += vel.y * dt;
+    var minD = R + T / 2;
+    for (var it = 0; it < 3; it++) {
+      for (var i = 0; i < segs.length; i++) {
+        var q = nearest(ball.x, ball.y, segs[i]);
+        var dx = ball.x - q[0], dy = ball.y - q[1], d = Math.sqrt(dx * dx + dy * dy);
+        if (d < minD) {
+          if (d < 1e-6) { dx = 0; dy = -1; d = 1; }
+          var push = (minD - d) / d;
+          ball.x += dx * push; ball.y += dy * push;
+        }
+      }
+    }
+  }
+
+  function loop(ts) {
+    if (!last) last = ts;
+    var dt = Math.min(0.033, (ts - last) / 1000); last = ts;
+    if (!finished) {
+      if (ctrl === 'tilt') {
+        if (tilt.got) {
+          if (tilt.b0 === null) tilt.b0 = tilt.b;
+          var tx = Math.max(-1, Math.min(1, tilt.g / 22)), ty = Math.max(-1, Math.min(1, (tilt.b - tilt.b0) / 22));
+          if (Math.abs(tx) < 0.12) tx = 0; if (Math.abs(ty) < 0.12) ty = 0;
+          vel.x = tx * VMAX; vel.y = ty * VMAX;
+          if ((tx || ty) && !started) { started = true; t0 = ts; }
+        }
+      } else if (joy) {
+        var vx = joy.cx - joy.ox, vy = joy.cy - joy.oy, m = Math.sqrt(vx * vx + vy * vy), k = Math.min(1, m / 55);
+        if (m > 3) { vel.x = (vx / m) * k * VMAX; vel.y = (vy / m) * k * VMAX; if (!started) { started = true; t0 = ts; } }
+        else { vel.x = 0; vel.y = 0; }
+      } else { vel.x *= 0.6; vel.y *= 0.6; }
+      // ключи клавиатуры для компьютера
+      if (keys.l || keys.r || keys.u || keys.d) {
+        vel.x = ((keys.r ? 1 : 0) - (keys.l ? 1 : 0)) * VMAX * 0.8; vel.y = ((keys.d ? 1 : 0) - (keys.u ? 1 : 0)) * VMAX * 0.8;
+        if (!started) { started = true; t0 = ts; }
+      }
+      var sub = 3; for (var i = 0; i < sub; i++) step(dt / sub);
+      if (started) { elapsed = (ts - t0) / 1000; document.getElementById('timer').textContent = fmt(elapsed); }
+      for (var si = 0; si < stars.length; si++) {
+        if (!stars[si][2] && Math.hypot(ball.x - stars[si][0], ball.y - stars[si][1]) < 0.4) {
+          stars[si][2] = true; starsGot++;
+          showStars();
+        }
+      }
+      var fx = W - 0.5, fy = H - 0.5;
+      if (started && Math.hypot(ball.x - fx, ball.y - fy) < 0.34) win();
+    }
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  function win() {
+    finished = true; vel.x = 0; vel.y = 0; joy = null;
+    var pen = 5 * (stars.length - starsGot) + hintCost, fin = elapsed + pen;
+    var best = null, key = 'labirint2-best-' + mazeKey;
+    try { var b = parseFloat(localStorage.getItem(key)); if (!isNaN(b)) best = b; } catch (e) {}
+    var isBest = best === null || fin < best;
+    if (isBest) { try { localStorage.setItem(key, String(fin)); } catch (e) {} }
+    res = { time: fin, base: elapsed, pen: pen, best: best, isBest: isBest, stars: starsGot };
+    renderResult();
+    document.getElementById('result').hidden = false;
+    document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function draw() {
+    var s = cell * dpr, i;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, cv.width, cv.height);
+    // тонкая сетка
+    ctx.strokeStyle = '#E3E9F2'; ctx.lineWidth = 1 * dpr; ctx.beginPath();
+    for (i = 1; i < W; i++) { ctx.moveTo(i * s, 0); ctx.lineTo(i * s, H * s); }
+    for (i = 1; i < H; i++) { ctx.moveTo(0, i * s); ctx.lineTo(W * s, i * s); }
+    ctx.stroke();
+    // старт
+    ctx.fillStyle = 'rgba(31,158,150,.22)'; ctx.fillRect(0, 0, s, s);
+    // финиш: звезда
+    var fx = (W - 0.5) * s, fy = (H - 0.5) * s, rr = 0.34 * s, a, r;
+    ctx.beginPath();
+    for (i = 0; i < 10; i++) { r = i % 2 ? rr * 0.45 : rr; a = i * Math.PI / 5; ctx.lineTo(fx + r * Math.sin(a), fy - r * Math.cos(a)); }
+    ctx.closePath(); ctx.fillStyle = '#F5C242'; ctx.fill(); ctx.lineWidth = 2.5 * dpr; ctx.strokeStyle = '#22304A'; ctx.stroke();
+    // розовые звёздочки для сбора
+    for (i = 0; i < stars.length; i++) {
+      if (stars[i][2]) continue;
+      var qx = stars[i][0] * s, qy = stars[i][1] * s, qr = 0.22 * s, k2;
+      ctx.beginPath();
+      for (k2 = 0; k2 < 10; k2++) { r = k2 % 2 ? qr * 0.45 : qr; a = k2 * Math.PI / 5; ctx.lineTo(qx + r * Math.sin(a), qy - r * Math.cos(a)); }
+      ctx.closePath(); ctx.fillStyle = '#EF8FA3'; ctx.fill(); ctx.lineWidth = 2 * dpr; ctx.strokeStyle = '#22304A'; ctx.stroke();
+    }
+    // стенки
+    ctx.lineCap = 'round';
+    for (i = 0; i < segs.length; i++) {
+      var g = segs[i];
+      ctx.beginPath(); ctx.moveTo(g[0] * s, g[1] * s); ctx.lineTo(g[2] * s, g[3] * s);
+      ctx.strokeStyle = g[4] ? '#22304A' : '#F2733A'; ctx.lineWidth = T * s; ctx.stroke();
+    }
+    // подсказка: подсвечиваем следующие клетки пути, подсветка плавно гаснет
+    if (hintPath) {
+      var left = hintUntil - performance.now();
+      if (left > 0) {
+        var al = Math.min(1, left / 1500), q2, pad = 0.14 * s;
+        for (i = 1; i < hintPath.length; i++) {
+          q2 = hintPath[i];
+          ctx.fillStyle = 'rgba(31,158,150,' + (0.32 * al).toFixed(3) + ')';
+          ctx.beginPath();
+          if (ctx.roundRect) ctx.roundRect(q2[0] * s + pad, q2[1] * s + pad, s - 2 * pad, s - 2 * pad, 0.12 * s);
+          else ctx.rect(q2[0] * s + pad, q2[1] * s + pad, s - 2 * pad, s - 2 * pad);
+          ctx.fill();
+          ctx.beginPath(); ctx.arc((q2[0] + 0.5) * s, (q2[1] + 0.5) * s, 0.07 * s, 0, 6.283);
+          ctx.fillStyle = 'rgba(31,158,150,' + (0.9 * al).toFixed(3) + ')'; ctx.fill();
+        }
+      }
+    }
+    // шарик
+    ctx.beginPath(); ctx.arc(ball.x * s, ball.y * s, R * s, 0, 6.283);
+    ctx.fillStyle = '#EF5B2A'; ctx.fill(); ctx.lineWidth = 3 * dpr; ctx.strokeStyle = '#22304A'; ctx.stroke();
+    ctx.beginPath(); ctx.arc((ball.x - 0.09) * s, (ball.y - 0.09) * s, 0.07 * s, 0, 6.283); ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.fill();
+  }
+
+  // управление пальцем: относительный джойстик от точки нажатия
+  cv.addEventListener('pointerdown', function (e) {
+    if (finished || ctrl === 'tilt') return;
+    try { cv.setPointerCapture(e.pointerId); } catch (x) {}
+    joy = { id: e.pointerId, ox: e.clientX, oy: e.clientY, cx: e.clientX, cy: e.clientY };
+    e.preventDefault();
+  });
+  cv.addEventListener('pointermove', function (e) { if (joy && joy.id === e.pointerId) { joy.cx = e.clientX; joy.cy = e.clientY; e.preventDefault(); } });
+  function up(e) { if (joy && joy.id === e.pointerId) joy = null; }
+  cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+
+  var keys = { l: 0, r: 0, u: 0, d: 0 };
+  function key(e, v) {
+    var k = e.key;
+    if (k === 'ArrowLeft') keys.l = v; else if (k === 'ArrowRight') keys.r = v; else if (k === 'ArrowUp') keys.u = v; else if (k === 'ArrowDown') keys.d = v; else return;
+    e.preventDefault();
+  }
+  window.addEventListener('keydown', function (e) { key(e, 1); });
+  window.addEventListener('keyup', function (e) { key(e, 0); });
+
+  document.getElementById('daily').addEventListener('click', function () { newMaze('daily'); });
+  document.getElementById('random').addEventListener('click', function () { newMaze('random'); });
+  document.getElementById('reset').addEventListener('click', function () { reset(false); });
+  var cb = document.getElementById('copy');
+  cb.addEventListener('click', function () {
+    var el = document.getElementById('sharetext');
+    function fb() {
+      var r = document.createRange(); r.selectNodeContents(el);
+      var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+      cb.textContent = t('sel');
+    }
+    try { navigator.clipboard.writeText(el.textContent).then(function () { cb.textContent = t('copied'); }, fb); } catch (e) { fb(); }
+  });
+  window.addEventListener('resize', resize);
+
+  // управление наклоном телефона (работает в обычном браузере по ссылке, в предпросмотре может быть закрыто)
+  document.getElementById('hintbtn').addEventListener('click', function () {
+    if (finished) return;
+    var path = findPath(); if (!path || path.length < 2) return;
+    var n = Math.min(4, path.length - 1);
+    hintPath = path.slice(0, n + 1); hintUntil = performance.now() + 4000; hintCost += n; showStars();
+  });
+  var tbtn = document.getElementById('tilt'), msg = document.getElementById('msg');
+  if (!window.DeviceOrientationEvent || /claudeusercontent\.com|^(file|blob|about):/.test(location.href)) tbtn.hidden = true;
+  function onTilt(e) {
+    if (e.gamma == null || e.beta == null) return;
+    tilt.got = true; tilt.g = e.gamma; tilt.b = e.beta;
+    if (tilt.b0 === null) tilt.b0 = e.beta;
+  }
+  function paintTilt() { tbtn.className = ctrl === 'tilt' ? 'on' : ''; }
+  function tiltOff() { ctrl = 'finger'; window.removeEventListener('deviceorientation', onTilt); vel.x = 0; vel.y = 0; paintTilt(); }
+  function tiltFail() { tiltOff(); msg.textContent = t('tiltNo'); msg.hidden = false; }
+  function tiltOn() {
+    msg.hidden = true;
+    var D = window.DeviceOrientationEvent;
+    if (!D) { tiltFail(); return; }
+    function go() {
+      ctrl = 'tilt'; tilt.got = false; tilt.b0 = null; joy = null;
+      window.addEventListener('deviceorientation', onTilt); paintTilt();
+      setTimeout(function () { if (ctrl === 'tilt' && !tilt.got) tiltFail(); }, 1500);
+    }
+    if (typeof D.requestPermission === 'function') {
+      D.requestPermission().then(function (st) { if (st === 'granted') go(); else tiltFail(); }, tiltFail);
+    } else { go(); }
+  }
+  tbtn.addEventListener('click', function () { if (ctrl === 'tilt') { tiltOff(); msg.hidden = true; } else tiltOn(); });
+
+  LANG = detect(); newMaze('daily'); applyLang(LANG); resize(); requestAnimationFrame(loop);
+})();
+</script>
+
+<script>try{if(window.Telegram&&Telegram.WebApp){var tw=Telegram.WebApp;tw.ready();tw.expand();try{if(tw.disableVerticalSwipes){tw.disableVerticalSwipes();}}catch(e2){}}}catch(e){}</script>
+</body>
+</html>
