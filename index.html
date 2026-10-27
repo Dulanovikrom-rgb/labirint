@@ -89,7 +89,7 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
 (function () {
   var W = 7, H = 10;
   var T = 0.14, R = 0.28;           // толщина стенки и радиус шарика в клетках
-  var VMAX = 6.5;                   // максимальная скорость, клеток в секунду
+  var VMAX = 7.5;                   // максимальная скорость, клеток в секунду
   var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
   var segs = [], seed = 1, label = '', mode = 'daily', mazeKey = '';
   var ball = { x: 0.5, y: 0.5 }, vel = { x: 0, y: 0 };
@@ -326,8 +326,11 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
           if ((tx || ty) && !started) { started = true; t0 = ts; }
         }
       } else if (joy) {
-        var vx = joy.cx - joy.ox, vy = joy.cy - joy.oy, m = Math.sqrt(vx * vx + vy * vy), k = Math.min(1, m / 32);
-        if (m > 3) { vel.x = (vx / m) * k * VMAX; vel.y = (vy / m) * k * VMAX; if (!started) { started = true; t0 = ts; } }
+        var vx = joy.cx - joy.ox, vy = joy.cy - joy.oy, m = Math.sqrt(vx * vx + vy * vy);
+        // точка отсчёта едет за пальцем, чтобы смена направления была мгновенной
+        if (m > 26) { joy.ox += vx / m * (m - 26); joy.oy += vy / m * (m - 26); vx = joy.cx - joy.ox; vy = joy.cy - joy.oy; m = 26; }
+        var k = Math.min(1, m / 18);
+        if (m > 2) { vel.x = (vx / m) * k * VMAX; vel.y = (vy / m) * k * VMAX; if (!started) { started = true; t0 = ts; } }
         else { vel.x = 0; vel.y = 0; }
       } else { vel.x *= 0.6; vel.y *= 0.6; }
       // ключи клавиатуры для компьютера
