@@ -159,14 +159,15 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
   function showStars() {
     document.getElementById('stars').textContent = t('starsLbl', starsGot) + (hintCost ? '  +' + hintCost : '');
   }
-  function findPath() {
+  function findPath(tx, ty) {
+    if (tx === undefined) { tx = W - 1; ty = H - 1; }
     // кратчайший путь по клеткам от шарика до финиша (поиск в ширину)
     var sx = Math.max(0, Math.min(W - 1, Math.floor(ball.x))), sy = Math.max(0, Math.min(H - 1, Math.floor(ball.y)));
     var prev = {}, q = [[sx, sy]], key = function (x, y) { return x + ',' + y; };
     prev[key(sx, sy)] = null;
     while (q.length) {
       var c = q.shift(), cx = c[0], cy = c[1];
-      if (cx === W - 1 && cy === H - 1) break;
+      if (cx === tx && cy === ty) break;
       var nb = [];
       if (cx < W - 1 && !GV[cy][cx + 1]) nb.push([cx + 1, cy]);
       if (cx > 0 && !GV[cy][cx]) nb.push([cx - 1, cy]);
@@ -177,9 +178,9 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
         if (!(k in prev)) { prev[k] = c; q.push(nb[i]); }
       }
     }
-    var end = key(W - 1, H - 1);
+    var end = key(tx, ty);
     if (!(end in prev)) return null;
-    var path = [], cur = [W - 1, H - 1];
+    var path = [], cur = [tx, ty];
     while (cur) { path.unshift(cur); cur = prev[key(cur[0], cur[1])]; }
     return path;
   }
@@ -493,7 +494,15 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
   // управление наклоном телефона (работает в обычном браузере по ссылке, в предпросмотре может быть закрыто)
   document.getElementById('hintbtn').addEventListener('click', function () {
     if (finished) return;
-    var path = findPath(); if (!path || path.length < 2) return;
+    // подсказка ведёт к ближайшей несобранной розовой звезде, а когда все собраны, к финишу
+    var path = null, i2;
+    for (i2 = 0; i2 < stars.length; i2++) {
+      if (stars[i2][2]) continue;
+      var pp = findPath(Math.floor(stars[i2][0]), Math.floor(stars[i2][1]));
+      if (pp && pp.length > 1 && (!path || pp.length < path.length)) path = pp;
+    }
+    if (!path) path = findPath();
+    if (!path || path.length < 2) return;
     var n = Math.min(4, path.length - 1);
     hintPath = path.slice(0, n + 1); hintUntil = performance.now() + 4000; hintCost += n; showStars();
   });
