@@ -55,6 +55,11 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
 .tile.main small { color: #1B2230; }
 .tile[disabled] { opacity: .55; cursor: default; }
 .menu-t { font-family: var(--display); font-weight: 800; font-size: 20px; margin: 4px 0 0; }
+#puz .field { padding: 6px; }
+.pboard { position: relative; margin: 0 auto; border-radius: 12px; background: #D3D9E2; touch-action: manipulation; }
+button.ptile { position: absolute; left: 0; top: 0; display: flex; align-items: center; justify-content: center; flex: none; padding: 0; border: none; border-radius: 10px;
+  background: #F2733A; color: #fff; font-family: var(--display); font-weight: 800; box-shadow: inset 0 -4px 0 rgba(0,0,0,.18); transition: transform .12s ease; user-select: none; -webkit-user-select: none; }
+button.ptile.ok { background: #1F9E96; }
 </style>
 </head>
 <body>
@@ -97,11 +102,34 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
   </div>
 </div>
 
+<div class="wrap" id="puz" hidden>
+  <div class="head">
+    <div><h1 id="ptitle">Пятнашки</h1><p class="sub" id="plabel"></p></div>
+    <div><div class="timer" id="ptimer">0.0</div><div class="stars" id="pmoves"></div></div>
+  </div>
+  <div class="bar"><button type="button" id="pback">← Меню</button></div>
+  <div class="field"><div class="pboard" id="pboard"></div></div>
+  <p class="hint" id="phint"></p>
+  <p class="hint warn" id="pchal" hidden></p>
+  <div class="row">
+    <button type="button" id="pdaily" class="main"></button>
+    <button type="button" id="prandom"></button>
+    <button type="button" id="preset"></button>
+  </div>
+  <div class="result" id="presult" hidden>
+    <h2 id="prt"></h2>
+    <p class="best" id="pbest"></p>
+    <p class="warn" id="pchres" hidden></p>
+    <div class="share" id="pshare"></div>
+    <button type="button" class="main" id="pcopy"></button>
+  </div>
+</div>
+
 <script>
 (function () {
   var W = 7, H = 10;
   var T = 0.14, R = 0.28;           // толщина стенки и радиус шарика в клетках
-  var BOT = 'https://t.me/labirint_dnya_bot', APP = 'Play', curLink = BOT, challenge = null;
+  var BOT = 'https://t.me/labirint_dnya_bot', APP = 'Play', curLink = BOT, challenge = null, pChal = null;
   var VMAX = 7.5;                   // максимальная скорость, клеток в секунду
   var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
   var segs = [], seed = 1, label = '', mode = 'daily', mazeKey = '';
@@ -233,7 +261,7 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
     });
     renderResult();
     if (typeof renderMenu === 'function' && !document.getElementById('menu').hidden) renderMenu();
-    if (typeof m === 'function') { document.getElementById('back').textContent = m('back'); renderChal(); }
+    if (typeof m === 'function') { document.getElementById('back').textContent = m('back'); renderChal(); if (typeof pzTexts === 'function' && !document.getElementById('puz').hidden) pzTexts(); }
   }
 
   function rng() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
@@ -490,15 +518,15 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
     var bot = curLink || BOT;
     var txt = el.textContent.replace(bot, '').trim();
     var surl = 'https://t.me/share/url?url=' + encodeURIComponent(bot) + '&text=' + encodeURIComponent(txt);
-    try { navigator.clipboard.writeText(el.textContent); } catch (e1) {}
+    try { navigator.clipboard.writeText(el.textContent).catch(function () {}); } catch (e1) {}
     try {
       if (tw && tw.openTelegramLink) { tw.openTelegramLink(surl); return; }
       if (window.open(surl, '_blank')) return;
     } catch (e0) {}
     try { navigator.clipboard.writeText(el.textContent).then(function () { cb.textContent = t('copied'); }, fb); } catch (e) { fb(); }
   });
-  window.addEventListener('resize', resize);
-  try { if (window.Telegram && Telegram.WebApp && Telegram.WebApp.onEvent) Telegram.WebApp.onEvent('viewportChanged', resize); } catch (e) {}
+  window.addEventListener('resize', function () { resize(); pzFit(); });
+  try { if (window.Telegram && Telegram.WebApp && Telegram.WebApp.onEvent) Telegram.WebApp.onEvent('viewportChanged', function () { resize(); pzFit(); }); } catch (e) {}
 
   // управление наклоном телефона (работает в обычном браузере по ссылке, в предпросмотре может быть закрыто)
   document.getElementById('hintbtn').addEventListener('click', function () {
@@ -546,23 +574,23 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
     ru: { play: '🎮 Играть', playS: 'Каталог игр и случайные режимы', day: '🏆 Игры дня', dayS: 'Одна карта для всех, новая в полночь по Москве',
       back: '← Меню', rnd: 'Случайный лабиринт', rndS: 'Новая карта каждый раз', soon: 'Скоро', left: 'Лабиринт дня № {a}, {b}',
       done: 'Пройдено: {a} сек. Завтра новая карта', fresh: 'Сегодня ещё не проходил', go: 'Играть', games: 'Игры', daily: 'Игры дня',
-      g1: 'Пятнашки', g2: 'Змейка', g3: 'Мемори', streak: '🔥 Серия: {a} дн.', yest: 'Вчера: {a} сек', next: 'Новая карта через {a}', h: 'ч', mi: 'мин', chal: 'Вызов друга: нужно быстрее {a} сек', won: 'Ты быстрее друга на {a} сек! 🎉', lost: 'Друг быстрее на {a} сек. Попробуй ещё!' },
+      g1: 'Пятнашки', g2: 'Змейка', g3: 'Мемори', streak: '🔥 Серия: {a} дн.', yest: 'Вчера: {a} сек', next: 'Новая карта через {a}', h: 'ч', mi: 'мин', chal: 'Вызов друга: нужно быстрее {a} сек', won: 'Ты быстрее друга на {a} сек! 🎉', lost: 'Друг быстрее на {a} сек. Попробуй ещё!', pzS: 'Собери числа по порядку', pzd: 'Пятнашки дня № {a}, {b}' },
     en: { play: '🎮 Play', playS: 'Game catalog and random modes', day: '🏆 Daily games', dayS: 'One map for everyone, new at midnight Moscow time',
       back: '← Menu', rnd: 'Random maze', rndS: 'A new map every time', soon: 'Soon', left: 'Maze of the Day #{a}, {b}',
       done: 'Done: {a} sec. New map tomorrow', fresh: 'Not played today yet', go: 'Play', games: 'Games', daily: 'Daily games',
-      g1: 'Sliding puzzle', g2: 'Snake', g3: 'Memory', streak: '🔥 Streak: {a} days', yest: 'Yesterday: {a} sec', next: 'New map in {a}', h: 'h', mi: 'min', chal: 'Friend challenge: beat {a} sec', won: 'You beat your friend by {a} sec! 🎉', lost: 'Your friend is faster by {a} sec. Try again!' },
+      g1: 'Sliding puzzle', g2: 'Snake', g3: 'Memory', streak: '🔥 Streak: {a} days', yest: 'Yesterday: {a} sec', next: 'New map in {a}', h: 'h', mi: 'min', chal: 'Friend challenge: beat {a} sec', won: 'You beat your friend by {a} sec! 🎉', lost: 'Your friend is faster by {a} sec. Try again!', pzS: 'Put the numbers in order', pzd: 'Sliding puzzle of the Day #{a}, {b}' },
     uz: { play: '🎮 O‘ynash', playS: 'O‘yinlar katalogi va tasodifiy rejimlar', day: '🏆 Kun o‘yinlari', dayS: 'Hamma uchun bitta xarita, Moskva vaqti bilan yarim tunda yangisi',
       back: '← Menyu', rnd: 'Tasodifiy labirint', rndS: 'Har safar yangi xarita', soon: 'Tez orada', left: 'Kun labirinti № {a}, {b}',
       done: 'Tayyor: {a} soniya. Ertaga yangi xarita', fresh: 'Bugun hali o‘ynalmagan', go: 'O‘ynash', games: 'O‘yinlar', daily: 'Kun o‘yinlari',
-      g1: 'Beshlik jumboq', g2: 'Ilon', g3: 'Xotira', streak: '🔥 Seriya: {a} kun', yest: 'Kecha: {a} soniya', next: 'Yangi xarita: {a}', h: 'soat', mi: 'daq', chal: 'Do‘st chaqirig‘i: {a} soniyadan tezroq o‘ting', won: 'Do‘stingizdan {a} soniya tezsiz! 🎉', lost: 'Do‘stingiz {a} soniya tezroq. Yana urinib ko‘ring!' },
+      g1: 'Beshlik jumboq', g2: 'Ilon', g3: 'Xotira', streak: '🔥 Seriya: {a} kun', yest: 'Kecha: {a} soniya', next: 'Yangi xarita: {a}', h: 'soat', mi: 'daq', chal: 'Do‘st chaqirig‘i: {a} soniyadan tezroq o‘ting', won: 'Do‘stingizdan {a} soniya tezsiz! 🎉', lost: 'Do‘stingiz {a} soniya tezroq. Yana urinib ko‘ring!', pzS: 'Raqamlarni tartibga keltiring', pzd: 'Kun beshligi № {a}, {b}' },
     tg: { play: '🎮 Бозӣ', playS: 'Феҳристи бозиҳо ва ҳолатҳои тасодуфӣ', day: '🏆 Бозиҳои рӯз', dayS: 'Як харита барои ҳама, нимашаб ба вақти Маскав нав мешавад',
       back: '← Меню', rnd: 'Лабиринти тасодуфӣ', rndS: 'Ҳар дафъа харитаи нав', soon: 'Ба қарибӣ', left: 'Лабиринти рӯз № {a}, {b}',
       done: 'Тайёр: {a} сония. Пагоҳ харитаи нав', fresh: 'Имрӯз ҳанӯз бозӣ накардаед', go: 'Бозӣ', games: 'Бозиҳо', daily: 'Бозиҳои рӯз',
-      g1: 'Панҷоздаҳ', g2: 'Мор', g3: 'Хотира', streak: '🔥 Силсила: {a} рӯз', yest: 'Дирӯз: {a} сония', next: 'Харитаи нав баъди {a}', h: 'соат', mi: 'дақ', chal: 'Даъвати дӯст: аз {a} сония тезтар гузаред', won: 'Шумо аз дӯст {a} сония тезтаред! 🎉', lost: 'Дӯст {a} сония тезтар аст. Боз кӯшиш кунед!' },
+      g1: 'Панҷоздаҳ', g2: 'Мор', g3: 'Хотира', streak: '🔥 Силсила: {a} рӯз', yest: 'Дирӯз: {a} сония', next: 'Харитаи нав баъди {a}', h: 'соат', mi: 'дақ', chal: 'Даъвати дӯст: аз {a} сония тезтар гузаред', won: 'Шумо аз дӯст {a} сония тезтаред! 🎉', lost: 'Дӯст {a} сония тезтар аст. Боз кӯшиш кунед!', pzS: 'Рақамҳоро ба тартиб оред', pzd: 'Панҷоздаҳи рӯз № {a}, {b}' },
     kk: { play: '🎮 Ойнау', playS: 'Ойындар каталогы және кездейсоқ режимдер', day: '🏆 Күн ойындары', dayS: 'Бәріне бір карта, Мәскеу уақытымен түн ортасында жаңа',
       back: '← Мәзір', rnd: 'Кездейсоқ лабиринт', rndS: 'Әр жолы жаңа карта', soon: 'Жақында', left: 'Күн лабиринті № {a}, {b}',
       done: 'Дайын: {a} сек. Ертең жаңа карта', fresh: 'Бүгін әлі ойналмаған', go: 'Ойнау', games: 'Ойындар', daily: 'Күн ойындары',
-      g1: 'Бессаяқ жұмбақ', g2: 'Жылан', g3: 'Жады', streak: '🔥 Серия: {a} күн', yest: 'Кеше: {a} сек', next: 'Жаңа карта {a} кейін', h: 'сағ', mi: 'мин', chal: 'Дос шақыруы: {a} секундтан жылдам өтіңіз', won: 'Сіз доспен салыстырғанда {a} сек жылдамсыз! 🎉', lost: 'Дос {a} сек жылдамырақ. Қайтадан көріңіз!' }
+      g1: 'Бессаяқ жұмбақ', g2: 'Жылан', g3: 'Жады', streak: '🔥 Серия: {a} күн', yest: 'Кеше: {a} сек', next: 'Жаңа карта {a} кейін', h: 'сағ', mi: 'мин', chal: 'Дос шақыруы: {a} секундтан жылдам өтіңіз', won: 'Сіз доспен салыстырғанда {a} сек жылдамсыз! 🎉', lost: 'Дос {a} сек жылдамырақ. Қайтадан көріңіз!', pzS: 'Сандарды ретімен қойыңыз', pzd: 'Күн бессаяғы № {a}, {b}' }
   };
   function m(k, a, b) { return (MENU[LANG] || MENU.en)[k].replace('{a}', a).replace('{b}', b); }
   var scr = 'home';
@@ -599,12 +627,14 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
       h += '<button type="button" id="mback" style="align-self:flex-start;flex:none">' + m('back') + '</button>';
       h += '<p class="menu-t">' + m('games') + '</p>';
       h += tile('rnd', m('rnd'), m('rndS'), 'main');
-      h += tile('', m('g1'), m('soon'), '', true) + tile('', m('g2'), m('soon'), '', true) + tile('', m('g3'), m('soon'), '', true);
+      h += tile('pz', m('g1'), m('pzS'), '') + tile('', m('g2'), m('soon'), '', true) + tile('', m('g3'), m('soon'), '', true);
     } else if (scr === 'day') {
       var ds = dateSeed(), b = bestOf('day-' + ds.n);
       h += '<button type="button" id="mback" style="align-self:flex-start;flex:none">' + m('back') + '</button>';
       h += '<p class="menu-t">' + m('daily') + '</p>';
       h += tile('daily', m('left', ds.no, ds.txt), b === null ? m('fresh') : m('done', b.toFixed(1)), 'main');
+      var pb = bestOf('pday-' + ds.n);
+      h += tile('pzd', m('pzd', ds.no, ds.txt), pb === null ? m('fresh') : m('done', pb.toFixed(1)), '');
       var sk = streakNow(ds.no), yv = parseFloat(lsGet('labirint-dres-' + (ds.no - 1)));
       h += '<p class="hint">' + (sk ? m('streak', sk) + ' · ' : '') + (isNaN(yv) ? '' : m('yest', yv.toFixed(1)) + ' · ') + m('next', untilNext()) + '</p>';
     }
@@ -624,14 +654,165 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
       else if (id === 'day') { scr = 'day'; renderMenu(); }
       else if (id === 'daily') { newMaze('daily'); showGame(true); }
       else if (id === 'rnd') { newMaze('random'); showGame(true); }
+      else if (id === 'pz') { showPuz(true, 'random'); }
+      else if (id === 'pzd') { showPuz(true, 'daily'); }
     });
   }
   function renderChal() {
     var c = document.getElementById('chal'), ok = challenge && lab.kind === 'daily' && challenge.no === lab.no;
     c.hidden = !ok; if (ok) c.textContent = m('chal', challenge.time.toFixed(1));
   }
+
+  // ===== Пятнашки =====
+  var PZ = {
+    ru: { rtitle: 'Готово: {a} сек, ходов: {b}', moves: 'Ходы: {a}', hint: 'Нажимай на цифры рядом с пустой клеткой. Расставь от 1 до 15.', share: '{a}: собрал за {b} сек, ходов: {c}. Сможешь быстрее?', bDaily: 'Пятнашки дня', bRnd: 'Случайные', bReset: 'Заново', rnd: 'Случайные пятнашки № {a}', first: 'Первый результат в этой головоломке.', rec: 'Новый рекорд! Раньше было {a} сек.', mine: 'Твой рекорд в этой головоломке: {a} сек.' },
+    en: { rtitle: 'Done: {a} sec, moves: {b}', moves: 'Moves: {a}', hint: 'Tap numbers next to the empty cell. Put 1 to 15 in order.', share: '{a}: solved in {b} sec, moves: {c}. Can you beat it?', bDaily: 'Puzzle of the Day', bRnd: 'Random', bReset: 'Restart', rnd: 'Random puzzle #{a}', first: 'First result on this puzzle.', rec: 'New record! It was {a} sec.', mine: 'Your best on this puzzle: {a} sec.' },
+    uz: { rtitle: 'Tayyor: {a} soniya, yurish: {b}', moves: 'Yurishlar: {a}', hint: 'Bo‘sh katak yonidagi raqamlarni bosing. 1 dan 15 gacha tering.', share: '{a}: {b} soniyada yig‘dim, yurish: {c}. Sen tezroq yig‘a olasanmi?', bDaily: 'Kun beshligi', bRnd: 'Tasodifiy', bReset: 'Qaytadan', rnd: 'Tasodifiy beshlik № {a}', first: 'Bu jumboqdagi birinchi natija.', rec: 'Yangi rekord! Avval {a} soniya edi.', mine: 'Bu jumboqdagi rekordingiz: {a} soniya.' },
+    tg: { rtitle: 'Тайёр: {a} сония, ҳаракат: {b}', moves: 'Ҳаракатҳо: {a}', hint: 'Рақамҳои назди хонаи холиро пахш кунед. Аз 1 то 15 ба тартиб оред.', share: '{a}: дар {b} сония ҷамъ кардам, ҳаракат: {c}. Метавонӣ тезтар ҷамъ кунӣ?', bDaily: 'Панҷоздаҳи рӯз', bRnd: 'Тасодуфӣ', bReset: 'Аз нав', rnd: 'Панҷоздаҳи тасодуфӣ № {a}', first: 'Натиҷаи аввал дар ин муаммо.', rec: 'Рекорди нав! Пештар {a} сония буд.', mine: 'Рекорди шумо дар ин муаммо: {a} сония.' },
+    kk: { rtitle: 'Дайын: {a} сек, жүріс: {b}', moves: 'Жүрістер: {a}', hint: 'Бос ұяшықтың жанындағы сандарды басыңыз. 1-ден 15-ке дейін қойыңыз.', share: '{a}: {b} секундта жиндім, жүріс: {c}. Сен тезірек жинай аласың ба?', bDaily: 'Күн бессаяғы', bRnd: 'Кездейсоқ', bReset: 'Қайта', rnd: 'Кездейсоқ бессаяқ № {a}', first: 'Бұл жұмбақтағы алғашқы нәтиже.', rec: 'Жаңа рекорд! Бұрын {a} сек болды.', mine: 'Бұл жұмбақтағы рекордыңыз: {a} сек.' }
+  };
+  function pz(k, a, b, c) { return (PZ[LANG] || PZ.en)[k].replace('{a}', a).replace('{b}', b).replace('{c}', c); }
+  var P = { arr: [], mode: 'daily', key: '', no: 0, txt: '', n: 0, moves: 0, started: false, won: false, t0: 0, el: 0, res: null, link: BOT, tm: null };
+  function pzRand(seed) { var x = (seed % 2147483646) + 1; return function () { x = (x * 16807) % 2147483647; return (x - 1) / 2147483646; }; }
+  function pzShuffle(seed) {
+    var a = [], i; for (i = 0; i < 15; i++) a.push(i + 1); a.push(0);
+    var rnd = pzRand(seed), e = 15, last = -1, n = 0;
+    while (n < 160 || a.every(function (v, j) { return j === 15 ? v === 0 : v === j + 1; })) {
+      var r0 = Math.floor(e / 4), c0 = e % 4, nb = [];
+      if (r0 > 0) nb.push(e - 4); if (r0 < 3) nb.push(e + 4); if (c0 > 0) nb.push(e - 1); if (c0 < 3) nb.push(e + 1);
+      nb = nb.filter(function (q) { return q !== last; });
+      var q2 = nb[Math.floor(rnd() * nb.length)];
+      a[e] = a[q2]; a[q2] = 0; last = e; e = q2; n++;
+    }
+    return a;
+  }
+  var pEls = [];
+  function pzBuild() {
+    var b = document.getElementById('pboard'); b.innerHTML = ''; pEls = {};
+    for (var v = 1; v <= 15; v++) (function (v) {
+      var x = document.createElement('button'); x.type = 'button'; x.className = 'ptile'; x.style.transition = 'none'; x.textContent = v;
+      x.addEventListener('click', function () { pzTap(v); });
+      b.appendChild(x); pEls[v] = x;
+    })(v);
+  }
+  var pS = 300;
+  function pzLayout() {
+    var g = 6, ts = (pS - g * 5) / 4, i;
+    var b = document.getElementById('pboard'); b.style.width = pS + 'px'; b.style.height = pS + 'px';
+    var ok = true;
+    for (i = 0; i < 16; i++) { var v = P.arr[i]; if (v && v !== i + 1) ok = false; if (i === 15 && v !== 0) ok = false; }
+    for (i = 0; i < 16; i++) {
+      var v2 = P.arr[i]; if (!v2) continue;
+      var el = pEls[v2], r0 = Math.floor(i / 4), c0 = i % 4;
+      el.style.width = ts + 'px'; el.style.height = ts + 'px'; el.style.fontSize = Math.round(ts * 0.42) + 'px';
+      el.style.transform = 'translate(' + (g + c0 * (ts + g)) + 'px,' + (g + r0 * (ts + g)) + 'px)';
+      el.className = 'ptile' + (v2 === i + 1 ? ' ok' : '');
+    }
+  }
+  function pzFit() {
+    var pe = document.getElementById('puz'); if (pe.hidden) return;
+    var w = pe.clientWidth - 14; if (w < 100) w = 100;
+    var rs = document.getElementById('presult'), bd = document.getElementById('pboard');
+    bd.style.width = w + 'px'; bd.style.height = w + 'px';
+    var other = pe.offsetHeight - bd.offsetHeight - (rs.hidden ? 0 : rs.offsetHeight + 14);
+    var bp = parseFloat(getComputedStyle(document.body).paddingTop) + parseFloat(getComputedStyle(document.body).paddingBottom);
+    var maxH = (window.innerHeight || 700) - bp - other - 16;
+    pS = Math.max(160, Math.min(w, maxH)); pzLayout();
+    setTimeout(function () { for (var k in pEls) pEls[k].style.transition = ''; }, 60);
+  }
+  function pzLabel() { return P.mode === 'daily' ? m('pzd', P.no, P.txt) : pz('rnd', P.n); }
+  function pzTexts() {
+    document.getElementById('ptitle').textContent = m('g1');
+    document.getElementById('plabel').textContent = pzLabel();
+    document.getElementById('pmoves').textContent = pz('moves', P.moves);
+    document.getElementById('phint').textContent = pz('hint');
+    document.getElementById('pdaily').textContent = pz('bDaily');
+    document.getElementById('prandom').textContent = pz('bRnd');
+    document.getElementById('preset').textContent = pz('bReset');
+    document.getElementById('pback').textContent = m('back');
+    var c = document.getElementById('pchal'), ok = pChal && P.mode === 'daily' && pChal.no === P.no;
+    c.hidden = !ok; if (ok) c.textContent = m('chal', pChal.time.toFixed(1));
+    if (P.res) pzResultText();
+  }
+  function pzNew(mode) {
+    P.mode = mode; P.moves = 0; P.started = false; P.won = false; P.el = 0; P.res = null;
+    var seed;
+    if (mode === 'daily') { var ds = dateSeed(); P.no = ds.no; P.txt = ds.txt; seed = ds.n * 3 + 11; P.key = 'pday-' + ds.n; P.n = 0; }
+    else { seed = Math.floor(Math.random() * 1000000) + 1; P.n = seed; P.key = 'prnd-' + seed; }
+    P.seed = seed; P.arr = pzShuffle(seed);
+    document.getElementById('presult').hidden = true; document.getElementById('ptimer').textContent = '0.0';
+    pzBuild(); pzTexts(); pzFit();
+  }
+  function pzReset() {
+    P.arr = pzShuffle(P.seed); P.moves = 0; P.started = false; P.won = false; P.el = 0; P.res = null;
+    document.getElementById('presult').hidden = true; document.getElementById('ptimer').textContent = '0.0';
+    pzTexts(); pzFit();
+  }
+  function pzTap(v) {
+    if (P.won) return;
+    var i = P.arr.indexOf(v), e = P.arr.indexOf(0), r0 = Math.floor(i / 4), c0 = i % 4, er = Math.floor(e / 4), ec = e % 4;
+    var step, k;
+    if (r0 === er) step = c0 < ec ? 1 : -1; else if (c0 === ec) step = r0 < er ? 4 : -4; else return;
+    for (k = e; k !== i; k -= step) P.arr[k] = P.arr[k - step];
+    P.arr[i] = 0;
+    if (!P.started) { P.started = true; P.t0 = performance.now(); }
+    P.moves++; document.getElementById('pmoves').textContent = pz('moves', P.moves);
+    pzLayout();
+    var solved = true, j; for (j = 0; j < 15; j++) if (P.arr[j] !== j + 1) solved = false;
+    if (solved && P.arr[15] === 0) pzWin();
+  }
+  function pzWin() {
+    P.won = true; P.el = (performance.now() - P.t0) / 1000;
+    document.getElementById('ptimer').textContent = P.el.toFixed(1);
+    var best = bestOf(P.key), isBest = best === null || P.el < best;
+    if (isBest) lsSet('labirint2-best-' + P.key, String(P.el));
+    if (P.mode === 'daily') { var d0 = parseFloat(lsGet('labirint-pres-' + P.no)); if (isNaN(d0) || P.el < d0) lsSet('labirint-pres-' + P.no, String(P.el)); }
+    var ch; if (pChal && P.mode === 'daily' && pChal.no === P.no) ch = pChal.time - P.el;
+    P.res = { time: P.el, moves: P.moves, best: best, isBest: isBest, ch: ch };
+    document.getElementById('presult').hidden = false;
+    pzResultText(); pzFit();
+    document.getElementById('presult').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+  function pzResultText() {
+    var R = P.res, link = BOT;
+    try {
+      var inTg = !!(window.Telegram && Telegram.WebApp && Telegram.WebApp.initData);
+      if (!inTg) link = (/^https?:$/.test(location.protocol) && !/claudeusercontent\.com/.test(location.href)) ? location.origin + location.pathname : '';
+      else if (P.mode === 'daily') link = BOT + '/' + APP + '?startapp=p' + P.no + '_' + Math.round(R.time * 10);
+    } catch (e) {}
+    P.link = link;
+    document.getElementById('prt').textContent = pz('rtitle', R.time.toFixed(1), R.moves);
+    document.getElementById('pbest').textContent = R.best === null ? pz('first') : (R.isBest ? pz('rec', R.best.toFixed(1)) : pz('mine', R.best.toFixed(1)));
+    document.getElementById('pshare').textContent = (pz('share', pzLabel(), R.time.toFixed(1), R.moves) + ' ' + link).trim();
+    document.getElementById('pcopy').textContent = t('copy');
+    var cr = document.getElementById('pchres');
+    if (R.ch === undefined) cr.hidden = true; else { cr.hidden = false; cr.textContent = R.ch >= 0 ? m('won', R.ch.toFixed(1)) : m('lost', (-R.ch).toFixed(1)); }
+  }
+  function showPuz(on, mode) {
+    document.getElementById('puz').hidden = !on;
+    document.getElementById('menu').hidden = on;
+    document.getElementById('game').hidden = true;
+    if (on) pzNew(mode); else renderMenu();
+  }
+  setInterval(function () { if (P.started && !P.won) document.getElementById('ptimer').textContent = ((performance.now() - P.t0) / 1000).toFixed(1); }, 100);
+  document.getElementById('pback').addEventListener('click', function () { showPuz(false); });
+  document.getElementById('pdaily').addEventListener('click', function () { pzNew('daily'); });
+  document.getElementById('prandom').addEventListener('click', function () { pzNew('random'); });
+  document.getElementById('preset').addEventListener('click', pzReset);
+  document.getElementById('pcopy').addEventListener('click', function () {
+    var el = document.getElementById('pshare'), cb2 = this, tw = window.Telegram && Telegram.WebApp;
+    var bot = P.link || BOT, txt = el.textContent.replace(bot, '').trim();
+    var surl = 'https://t.me/share/url?url=' + encodeURIComponent(bot) + '&text=' + encodeURIComponent(txt);
+    try { navigator.clipboard.writeText(el.textContent).catch(function () {}); } catch (e1) {}
+    try {
+      if (tw && tw.openTelegramLink) { tw.openTelegramLink(surl); return; }
+      if (window.open(surl, '_blank')) return;
+    } catch (e0) {}
+    cb2.textContent = t('copied');
+  });
   function showGame(on) {
     document.getElementById('game').hidden = !on;
+    document.getElementById('puz').hidden = true;
     document.getElementById('menu').hidden = on;
     if (on) { document.getElementById('back').textContent = m('back'); renderChal(); resize(); } else { reset(false); renderMenu(); }
   }
@@ -640,9 +821,12 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
     var sp = window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.start_param;
     var mm = /^d(\d+)_(\d+)$/.exec(sp || '');
     if (mm) challenge = { no: parseInt(mm[1], 10), time: parseInt(mm[2], 10) / 10 };
+    var mp = /^p(\d+)_(\d+)$/.exec(sp || '');
+    if (mp) pChal = { no: parseInt(mp[1], 10), time: parseInt(mp[2], 10) / 10 };
   } catch (e) {}
   LANG = detect(); newMaze('daily'); applyLang(LANG); renderMenu(); requestAnimationFrame(loop);
   if (challenge && challenge.no === lab.no) showGame(true);
+  else if (pChal && pChal.no === dateSeed().no) showPuz(true, 'daily');
 })();
 </script>
 
