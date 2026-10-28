@@ -79,6 +79,7 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
   <div class="field"><canvas id="cv" aria-label="Игровое поле лабиринта"></canvas></div>
   <p class="hint" id="hint">Нажми в любом месте поля и веди пальцем в сторону. Шарик едет туда же. Дойди до звезды.</p>
 
+  <p class="hint warn" id="chal" hidden></p>
   <p class="hint warn" id="msg" hidden></p>
   <div class="row">
     <button type="button" id="daily" class="main">Лабиринт дня</button>
@@ -90,6 +91,7 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
     <h2 id="rtitle">Готово!</h2>
     <p class="best" id="pen"></p>
     <p class="best" id="best"></p>
+    <p class="warn" id="chres" hidden></p>
     <div class="share" id="sharetext"></div>
     <button type="button" class="main" id="copy">Отправить другу</button>
   </div>
@@ -99,6 +101,7 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
 (function () {
   var W = 7, H = 10;
   var T = 0.14, R = 0.28;           // толщина стенки и радиус шарика в клетках
+  var BOT = 'https://t.me/labirint_dnya_bot', APP = 'play', curLink = BOT, challenge = null;
   var VMAX = 7.5;                   // максимальная скорость, клеток в секунду
   var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
   var segs = [], seed = 1, label = '', mode = 'daily', mazeKey = '';
@@ -193,6 +196,11 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
       link = inTg ? 'https://t.me/labirint_dnya_bot' : (/^https?:$/.test(location.protocol) ? location.origin + location.pathname : '');
     } catch (e) {}
     if (/claudeusercontent\.com|^(file|blob|about):/.test(link)) link = '';
+    curLink = link;
+    try { if (link === BOT && lab.kind === 'daily') { link = BOT + '/' + APP + '?startapp=d' + lab.no + '_' + Math.round(res.time * 10); curLink = link; } } catch (e) {}
+    var cr = document.getElementById('chres');
+    if (res.ch === undefined) cr.hidden = true;
+    else { cr.hidden = false; cr.textContent = res.ch >= 0 ? m('won', res.ch.toFixed(1)) : m('lost', (-res.ch).toFixed(1)); }
     document.getElementById('rtitle').textContent = t('done', res.time.toFixed(1));
     document.getElementById('best').textContent = res.best === null ? t('first') : (res.isBest ? t('rec', res.best.toFixed(1)) : t('mine', res.best.toFixed(1)));
     document.getElementById('sharetext').textContent = (t('share', labelText(), res.time.toFixed(1), res.stars) + ' ' + link).trim();
@@ -225,7 +233,7 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
     });
     renderResult();
     if (typeof renderMenu === 'function' && !document.getElementById('menu').hidden) renderMenu();
-    if (typeof m === 'function') document.getElementById('back').textContent = m('back');
+    if (typeof m === 'function') { document.getElementById('back').textContent = m('back'); renderChal(); }
   }
 
   function rng() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
@@ -385,7 +393,8 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
     var isBest = best === null || fin < best;
     if (isBest) { try { localStorage.setItem(key, String(fin)); } catch (e) {} }
     if (lab.kind === 'daily') recordDaily(lab.no, fin);
-    res = { time: fin, base: elapsed, pen: pen, best: best, isBest: isBest, stars: starsGot };
+    var chd; if (challenge && lab.kind === 'daily' && challenge.no === lab.no) chd = challenge.time - fin;
+    res = { ch: chd, time: fin, base: elapsed, pen: pen, best: best, isBest: isBest, stars: starsGot };
     renderResult();
     document.getElementById('result').hidden = false;
     document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -478,7 +487,7 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
       cb.textContent = t('sel');
     }
     var tw = window.Telegram && Telegram.WebApp;
-    var bot = 'https://t.me/labirint_dnya_bot';
+    var bot = curLink || BOT;
     var txt = el.textContent.replace(bot, '').trim();
     var surl = 'https://t.me/share/url?url=' + encodeURIComponent(bot) + '&text=' + encodeURIComponent(txt);
     try { navigator.clipboard.writeText(el.textContent); } catch (e1) {}
@@ -537,23 +546,23 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
     ru: { play: '🎮 Играть', playS: 'Каталог игр и случайные режимы', day: '🏆 Игры дня', dayS: 'Одна карта для всех, новая в полночь по Москве',
       back: '← Меню', rnd: 'Случайный лабиринт', rndS: 'Новая карта каждый раз', soon: 'Скоро', left: 'Лабиринт дня № {a}, {b}',
       done: 'Пройдено: {a} сек. Завтра новая карта', fresh: 'Сегодня ещё не проходил', go: 'Играть', games: 'Игры', daily: 'Игры дня',
-      g1: 'Пятнашки', g2: 'Змейка', g3: 'Мемори', streak: '🔥 Серия: {a} дн.', yest: 'Вчера: {a} сек', next: 'Новая карта через {a}', h: 'ч', mi: 'мин' },
+      g1: 'Пятнашки', g2: 'Змейка', g3: 'Мемори', streak: '🔥 Серия: {a} дн.', yest: 'Вчера: {a} сек', next: 'Новая карта через {a}', h: 'ч', mi: 'мин', chal: 'Вызов друга: нужно быстрее {a} сек', won: 'Ты быстрее друга на {a} сек! 🎉', lost: 'Друг быстрее на {a} сек. Попробуй ещё!' },
     en: { play: '🎮 Play', playS: 'Game catalog and random modes', day: '🏆 Daily games', dayS: 'One map for everyone, new at midnight Moscow time',
       back: '← Menu', rnd: 'Random maze', rndS: 'A new map every time', soon: 'Soon', left: 'Maze of the Day #{a}, {b}',
       done: 'Done: {a} sec. New map tomorrow', fresh: 'Not played today yet', go: 'Play', games: 'Games', daily: 'Daily games',
-      g1: 'Sliding puzzle', g2: 'Snake', g3: 'Memory', streak: '🔥 Streak: {a} days', yest: 'Yesterday: {a} sec', next: 'New map in {a}', h: 'h', mi: 'min' },
+      g1: 'Sliding puzzle', g2: 'Snake', g3: 'Memory', streak: '🔥 Streak: {a} days', yest: 'Yesterday: {a} sec', next: 'New map in {a}', h: 'h', mi: 'min', chal: 'Friend challenge: beat {a} sec', won: 'You beat your friend by {a} sec! 🎉', lost: 'Your friend is faster by {a} sec. Try again!' },
     uz: { play: '🎮 O‘ynash', playS: 'O‘yinlar katalogi va tasodifiy rejimlar', day: '🏆 Kun o‘yinlari', dayS: 'Hamma uchun bitta xarita, Moskva vaqti bilan yarim tunda yangisi',
       back: '← Menyu', rnd: 'Tasodifiy labirint', rndS: 'Har safar yangi xarita', soon: 'Tez orada', left: 'Kun labirinti № {a}, {b}',
       done: 'Tayyor: {a} soniya. Ertaga yangi xarita', fresh: 'Bugun hali o‘ynalmagan', go: 'O‘ynash', games: 'O‘yinlar', daily: 'Kun o‘yinlari',
-      g1: 'Beshlik jumboq', g2: 'Ilon', g3: 'Xotira', streak: '🔥 Seriya: {a} kun', yest: 'Kecha: {a} soniya', next: 'Yangi xarita: {a}', h: 'soat', mi: 'daq' },
+      g1: 'Beshlik jumboq', g2: 'Ilon', g3: 'Xotira', streak: '🔥 Seriya: {a} kun', yest: 'Kecha: {a} soniya', next: 'Yangi xarita: {a}', h: 'soat', mi: 'daq', chal: 'Do‘st chaqirig‘i: {a} soniyadan tezroq o‘ting', won: 'Do‘stingizdan {a} soniya tezsiz! 🎉', lost: 'Do‘stingiz {a} soniya tezroq. Yana urinib ko‘ring!' },
     tg: { play: '🎮 Бозӣ', playS: 'Феҳристи бозиҳо ва ҳолатҳои тасодуфӣ', day: '🏆 Бозиҳои рӯз', dayS: 'Як харита барои ҳама, нимашаб ба вақти Маскав нав мешавад',
       back: '← Меню', rnd: 'Лабиринти тасодуфӣ', rndS: 'Ҳар дафъа харитаи нав', soon: 'Ба қарибӣ', left: 'Лабиринти рӯз № {a}, {b}',
       done: 'Тайёр: {a} сония. Пагоҳ харитаи нав', fresh: 'Имрӯз ҳанӯз бозӣ накардаед', go: 'Бозӣ', games: 'Бозиҳо', daily: 'Бозиҳои рӯз',
-      g1: 'Панҷоздаҳ', g2: 'Мор', g3: 'Хотира', streak: '🔥 Силсила: {a} рӯз', yest: 'Дирӯз: {a} сония', next: 'Харитаи нав баъди {a}', h: 'соат', mi: 'дақ' },
+      g1: 'Панҷоздаҳ', g2: 'Мор', g3: 'Хотира', streak: '🔥 Силсила: {a} рӯз', yest: 'Дирӯз: {a} сония', next: 'Харитаи нав баъди {a}', h: 'соат', mi: 'дақ', chal: 'Даъвати дӯст: аз {a} сония тезтар гузаред', won: 'Шумо аз дӯст {a} сония тезтаред! 🎉', lost: 'Дӯст {a} сония тезтар аст. Боз кӯшиш кунед!' },
     kk: { play: '🎮 Ойнау', playS: 'Ойындар каталогы және кездейсоқ режимдер', day: '🏆 Күн ойындары', dayS: 'Бәріне бір карта, Мәскеу уақытымен түн ортасында жаңа',
       back: '← Мәзір', rnd: 'Кездейсоқ лабиринт', rndS: 'Әр жолы жаңа карта', soon: 'Жақында', left: 'Күн лабиринті № {a}, {b}',
       done: 'Дайын: {a} сек. Ертең жаңа карта', fresh: 'Бүгін әлі ойналмаған', go: 'Ойнау', games: 'Ойындар', daily: 'Күн ойындары',
-      g1: 'Бессаяқ жұмбақ', g2: 'Жылан', g3: 'Жады', streak: '🔥 Серия: {a} күн', yest: 'Кеше: {a} сек', next: 'Жаңа карта {a} кейін', h: 'сағ', mi: 'мин' }
+      g1: 'Бессаяқ жұмбақ', g2: 'Жылан', g3: 'Жады', streak: '🔥 Серия: {a} күн', yest: 'Кеше: {a} сек', next: 'Жаңа карта {a} кейін', h: 'сағ', mi: 'мин', chal: 'Дос шақыруы: {a} секундтан жылдам өтіңіз', won: 'Сіз доспен салыстырғанда {a} сек жылдамсыз! 🎉', lost: 'Дос {a} сек жылдамырақ. Қайтадан көріңіз!' }
   };
   function m(k, a, b) { return (MENU[LANG] || MENU.en)[k].replace('{a}', a).replace('{b}', b); }
   var scr = 'home';
@@ -617,13 +626,23 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
       else if (id === 'rnd') { newMaze('random'); showGame(true); }
     });
   }
+  function renderChal() {
+    var c = document.getElementById('chal'), ok = challenge && lab.kind === 'daily' && challenge.no === lab.no;
+    c.hidden = !ok; if (ok) c.textContent = m('chal', challenge.time.toFixed(1));
+  }
   function showGame(on) {
     document.getElementById('game').hidden = !on;
     document.getElementById('menu').hidden = on;
-    if (on) { document.getElementById('back').textContent = m('back'); resize(); } else { reset(false); renderMenu(); }
+    if (on) { document.getElementById('back').textContent = m('back'); renderChal(); resize(); } else { reset(false); renderMenu(); }
   }
   document.getElementById('back').addEventListener('click', function () { showGame(false); });
+  try {
+    var sp = window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.start_param;
+    var mm = /^d(\d+)_(\d+)$/.exec(sp || '');
+    if (mm) challenge = { no: parseInt(mm[1], 10), time: parseInt(mm[2], 10) / 10 };
+  } catch (e) {}
   LANG = detect(); newMaze('daily'); applyLang(LANG); renderMenu(); requestAnimationFrame(loop);
+  if (challenge && challenge.no === lab.no) showGame(true);
 })();
 </script>
 
