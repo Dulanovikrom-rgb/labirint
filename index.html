@@ -383,6 +383,7 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
     try { var b = parseFloat(localStorage.getItem(key)); if (!isNaN(b)) best = b; } catch (e) {}
     var isBest = best === null || fin < best;
     if (isBest) { try { localStorage.setItem(key, String(fin)); } catch (e) {} }
+    if (lab.kind === 'daily') recordDaily(lab.no, fin);
     res = { time: fin, base: elapsed, pen: pen, best: best, isBest: isBest, stars: starsGot };
     renderResult();
     document.getElementById('result').hidden = false;
@@ -527,26 +528,45 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
     ru: { play: '🎮 Играть', playS: 'Каталог игр и случайные режимы', day: '🏆 Игры дня', dayS: 'Одна карта для всех, новая в полночь по Москве',
       back: '← Меню', rnd: 'Случайный лабиринт', rndS: 'Новая карта каждый раз', soon: 'Скоро', left: 'Лабиринт дня № {a}, {b}',
       done: 'Пройдено: {a} сек. Завтра новая карта', fresh: 'Сегодня ещё не проходил', go: 'Играть', games: 'Игры', daily: 'Игры дня',
-      g1: 'Пятнашки', g2: 'Змейка', g3: 'Мемори' },
+      g1: 'Пятнашки', g2: 'Змейка', g3: 'Мемори', streak: '🔥 Серия: {a} дн.', yest: 'Вчера: {a} сек', next: 'Новая карта через {a}', h: 'ч', mi: 'мин' },
     en: { play: '🎮 Play', playS: 'Game catalog and random modes', day: '🏆 Daily games', dayS: 'One map for everyone, new at midnight Moscow time',
       back: '← Menu', rnd: 'Random maze', rndS: 'A new map every time', soon: 'Soon', left: 'Maze of the Day #{a}, {b}',
       done: 'Done: {a} sec. New map tomorrow', fresh: 'Not played today yet', go: 'Play', games: 'Games', daily: 'Daily games',
-      g1: 'Sliding puzzle', g2: 'Snake', g3: 'Memory' },
+      g1: 'Sliding puzzle', g2: 'Snake', g3: 'Memory', streak: '🔥 Streak: {a} days', yest: 'Yesterday: {a} sec', next: 'New map in {a}', h: 'h', mi: 'min' },
     uz: { play: '🎮 O‘ynash', playS: 'O‘yinlar katalogi va tasodifiy rejimlar', day: '🏆 Kun o‘yinlari', dayS: 'Hamma uchun bitta xarita, Moskva vaqti bilan yarim tunda yangisi',
       back: '← Menyu', rnd: 'Tasodifiy labirint', rndS: 'Har safar yangi xarita', soon: 'Tez orada', left: 'Kun labirinti № {a}, {b}',
       done: 'Tayyor: {a} soniya. Ertaga yangi xarita', fresh: 'Bugun hali o‘ynalmagan', go: 'O‘ynash', games: 'O‘yinlar', daily: 'Kun o‘yinlari',
-      g1: 'Beshlik jumboq', g2: 'Ilon', g3: 'Xotira' },
+      g1: 'Beshlik jumboq', g2: 'Ilon', g3: 'Xotira', streak: '🔥 Seriya: {a} kun', yest: 'Kecha: {a} soniya', next: 'Yangi xarita: {a}', h: 'soat', mi: 'daq' },
     tg: { play: '🎮 Бозӣ', playS: 'Феҳристи бозиҳо ва ҳолатҳои тасодуфӣ', day: '🏆 Бозиҳои рӯз', dayS: 'Як харита барои ҳама, нимашаб ба вақти Маскав нав мешавад',
       back: '← Меню', rnd: 'Лабиринти тасодуфӣ', rndS: 'Ҳар дафъа харитаи нав', soon: 'Ба қарибӣ', left: 'Лабиринти рӯз № {a}, {b}',
       done: 'Тайёр: {a} сония. Пагоҳ харитаи нав', fresh: 'Имрӯз ҳанӯз бозӣ накардаед', go: 'Бозӣ', games: 'Бозиҳо', daily: 'Бозиҳои рӯз',
-      g1: 'Панҷоздаҳ', g2: 'Мор', g3: 'Хотира' },
+      g1: 'Панҷоздаҳ', g2: 'Мор', g3: 'Хотира', streak: '🔥 Силсила: {a} рӯз', yest: 'Дирӯз: {a} сония', next: 'Харитаи нав баъди {a}', h: 'соат', mi: 'дақ' },
     kk: { play: '🎮 Ойнау', playS: 'Ойындар каталогы және кездейсоқ режимдер', day: '🏆 Күн ойындары', dayS: 'Бәріне бір карта, Мәскеу уақытымен түн ортасында жаңа',
       back: '← Мәзір', rnd: 'Кездейсоқ лабиринт', rndS: 'Әр жолы жаңа карта', soon: 'Жақында', left: 'Күн лабиринті № {a}, {b}',
       done: 'Дайын: {a} сек. Ертең жаңа карта', fresh: 'Бүгін әлі ойналмаған', go: 'Ойнау', games: 'Ойындар', daily: 'Күн ойындары',
-      g1: 'Бессаяқ жұмбақ', g2: 'Жылан', g3: 'Жады' }
+      g1: 'Бессаяқ жұмбақ', g2: 'Жылан', g3: 'Жады', streak: '🔥 Серия: {a} күн', yest: 'Кеше: {a} сек', next: 'Жаңа карта {a} кейін', h: 'сағ', mi: 'мин' }
   };
   function m(k, a, b) { return (MENU[LANG] || MENU.en)[k].replace('{a}', a).replace('{b}', b); }
   var scr = 'home';
+  function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function recordDaily(no, time) {
+    var d = parseFloat(lsGet('labirint-dres-' + no));
+    if (isNaN(d) || time < d) lsSet('labirint-dres-' + no, String(time));
+    var st = null; try { st = JSON.parse(lsGet('labirint-streak')); } catch (e) {}
+    var count = 1;
+    if (st && st.last === no) count = st.count;
+    else if (st && st.last === no - 1) count = st.count + 1;
+    lsSet('labirint-streak', JSON.stringify({ last: no, count: count }));
+  }
+  function streakNow(no) {
+    var st = null; try { st = JSON.parse(lsGet('labirint-streak')); } catch (e) {}
+    return st && (st.last === no || st.last === no - 1) ? st.count : 0;
+  }
+  function untilNext() {
+    var ms = 86400000 - ((Date.now() + 3 * 3600000) % 86400000), mins = Math.ceil(ms / 60000);
+    return Math.floor(mins / 60) + ' ' + m('h') + ' ' + (mins % 60) + ' ' + m('mi');
+  }
   function bestOf(key) { try { var v = parseFloat(localStorage.getItem('labirint2-best-' + key)); return isNaN(v) ? null : v; } catch (e) { return null; } }
   function tile(id, title, sub, cls, dis) {
     return '<button type="button" class="tile ' + (cls || '') + '" data-id="' + id + '"' + (dis ? ' disabled' : '') + '>' + title + '<small>' + sub + '</small></button>';
@@ -567,6 +587,8 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
       h += '<button type="button" id="mback" style="align-self:flex-start;flex:none">' + m('back') + '</button>';
       h += '<p class="menu-t">' + m('daily') + '</p>';
       h += tile('daily', m('left', ds.no, ds.txt), b === null ? m('fresh') : m('done', b.toFixed(1)), 'main');
+      var sk = streakNow(ds.no), yv = parseFloat(lsGet('labirint-dres-' + (ds.no - 1)));
+      h += '<p class="hint">' + (sk ? m('streak', sk) + ' · ' : '') + (isNaN(yv) ? '' : m('yest', yv.toFixed(1)) + ' · ') + m('next', untilNext()) + '</p>';
     }
     box.innerHTML = h;
     var lb = document.getElementById('mlangs');
