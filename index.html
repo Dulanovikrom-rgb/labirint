@@ -48,11 +48,19 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
 .langs { display: flex; flex-wrap: wrap; gap: 6px; }
 .langs button { flex: 0 0 auto; padding: 5px 12px; font-size: 13px; }
 .langs button.on { background: var(--accent); border-color: var(--accent); color: #1B2230; }
+#menu { padding-top: 4px; }
+.tile { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; width: 100%; border-radius: 16px; padding: 14px 16px; font-size: 18px; flex: none; background: var(--panel); }
+.tile small { font-family: var(--text); font-weight: 700; font-size: 13px; color: var(--muted); }
+.tile.main small { color: #1B2230; }
+.tile[disabled] { opacity: .55; cursor: default; }
+.menu-t { font-family: var(--display); font-weight: 800; font-size: 20px; margin: 4px 0 0; }
 </style>
 </head>
 <body>
 
-<div class="wrap">
+<div class="wrap" id="menu"></div>
+
+<div class="wrap" id="game" hidden>
   <div class="langs" id="langs"></div>
   <div class="head">
     <div>
@@ -63,6 +71,7 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
   </div>
 
   <div class="bar">
+    <button type="button" id="back">← Меню</button>
     <button type="button" id="hintbtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.7.6 1 1.3 1 2.1h5c0-.8.3-1.5 1-2.1A6 6 0 0 0 12 3z"/></svg><span id="hintlbl">Подсказка</span></button>
     <button type="button" id="tilt"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2" transform="rotate(20 12 12)"/><path d="M12 18h.01"/></svg><span id="tiltlbl">Наклон</span></button>
   </div>
@@ -213,6 +222,8 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
       box.appendChild(b);
     });
     renderResult();
+    if (typeof renderMenu === 'function' && !document.getElementById('menu').hidden) renderMenu();
+    if (typeof m === 'function') document.getElementById('back').textContent = m('back');
   }
 
   function rng() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
@@ -454,11 +465,14 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
       cb.textContent = t('sel');
     }
     var tw = window.Telegram && Telegram.WebApp;
-    if (tw && tw.initData && tw.openTelegramLink) {
-      var bot = 'https://t.me/labirint_dnya_bot';
-      var txt = el.textContent.replace(bot, '').trim();
-      try { tw.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(bot) + '&text=' + encodeURIComponent(txt)); return; } catch (e0) {}
-    }
+    var bot = 'https://t.me/labirint_dnya_bot';
+    var txt = el.textContent.replace(bot, '').trim();
+    var surl = 'https://t.me/share/url?url=' + encodeURIComponent(bot) + '&text=' + encodeURIComponent(txt);
+    try { navigator.clipboard.writeText(el.textContent); } catch (e1) {}
+    try {
+      if (tw && tw.openTelegramLink) { tw.openTelegramLink(surl); return; }
+      if (window.open(surl, '_blank')) return;
+    } catch (e0) {}
     try { navigator.clipboard.writeText(el.textContent).then(function () { cb.textContent = t('copied'); }, fb); } catch (e) { fb(); }
   });
   window.addEventListener('resize', resize);
@@ -495,7 +509,78 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
   }
   tbtn.addEventListener('click', function () { if (ctrl === 'tilt') { tiltOff(); msg.hidden = true; } else tiltOn(); });
 
-  LANG = detect(); newMaze('daily'); applyLang(LANG); resize(); requestAnimationFrame(loop);
+
+  // ===== Главное меню =====
+  var MENU = {
+    ru: { play: '🎮 Играть', playS: 'Каталог игр и случайные режимы', day: '🏆 Игры дня', dayS: 'Одна карта для всех, новая в полночь по Москве',
+      back: '← Меню', rnd: 'Случайный лабиринт', rndS: 'Новая карта каждый раз', soon: 'Скоро', left: 'Лабиринт дня № {a}, {b}',
+      done: 'Пройдено: {a} сек. Завтра новая карта', fresh: 'Сегодня ещё не проходил', go: 'Играть', games: 'Игры', daily: 'Игры дня',
+      g1: 'Пятнашки', g2: 'Змейка', g3: 'Мемори' },
+    en: { play: '🎮 Play', playS: 'Game catalog and random modes', day: '🏆 Daily games', dayS: 'One map for everyone, new at midnight Moscow time',
+      back: '← Menu', rnd: 'Random maze', rndS: 'A new map every time', soon: 'Soon', left: 'Maze of the Day #{a}, {b}',
+      done: 'Done: {a} sec. New map tomorrow', fresh: 'Not played today yet', go: 'Play', games: 'Games', daily: 'Daily games',
+      g1: 'Sliding puzzle', g2: 'Snake', g3: 'Memory' },
+    uz: { play: '🎮 O‘ynash', playS: 'O‘yinlar katalogi va tasodifiy rejimlar', day: '🏆 Kun o‘yinlari', dayS: 'Hamma uchun bitta xarita, Moskva vaqti bilan yarim tunda yangisi',
+      back: '← Menyu', rnd: 'Tasodifiy labirint', rndS: 'Har safar yangi xarita', soon: 'Tez orada', left: 'Kun labirinti № {a}, {b}',
+      done: 'Tayyor: {a} soniya. Ertaga yangi xarita', fresh: 'Bugun hali o‘ynalmagan', go: 'O‘ynash', games: 'O‘yinlar', daily: 'Kun o‘yinlari',
+      g1: 'Beshlik jumboq', g2: 'Ilon', g3: 'Xotira' },
+    tg: { play: '🎮 Бозӣ', playS: 'Феҳристи бозиҳо ва ҳолатҳои тасодуфӣ', day: '🏆 Бозиҳои рӯз', dayS: 'Як харита барои ҳама, нимашаб ба вақти Маскав нав мешавад',
+      back: '← Меню', rnd: 'Лабиринти тасодуфӣ', rndS: 'Ҳар дафъа харитаи нав', soon: 'Ба қарибӣ', left: 'Лабиринти рӯз № {a}, {b}',
+      done: 'Тайёр: {a} сония. Пагоҳ харитаи нав', fresh: 'Имрӯз ҳанӯз бозӣ накардаед', go: 'Бозӣ', games: 'Бозиҳо', daily: 'Бозиҳои рӯз',
+      g1: 'Панҷоздаҳ', g2: 'Мор', g3: 'Хотира' },
+    kk: { play: '🎮 Ойнау', playS: 'Ойындар каталогы және кездейсоқ режимдер', day: '🏆 Күн ойындары', dayS: 'Бәріне бір карта, Мәскеу уақытымен түн ортасында жаңа',
+      back: '← Мәзір', rnd: 'Кездейсоқ лабиринт', rndS: 'Әр жолы жаңа карта', soon: 'Жақында', left: 'Күн лабиринті № {a}, {b}',
+      done: 'Дайын: {a} сек. Ертең жаңа карта', fresh: 'Бүгін әлі ойналмаған', go: 'Ойнау', games: 'Ойындар', daily: 'Күн ойындары',
+      g1: 'Бессаяқ жұмбақ', g2: 'Жылан', g3: 'Жады' }
+  };
+  function m(k, a, b) { return (MENU[LANG] || MENU.en)[k].replace('{a}', a).replace('{b}', b); }
+  var scr = 'home';
+  function bestOf(key) { try { var v = parseFloat(localStorage.getItem('labirint2-best-' + key)); return isNaN(v) ? null : v; } catch (e) { return null; } }
+  function tile(id, title, sub, cls, dis) {
+    return '<button type="button" class="tile ' + (cls || '') + '" data-id="' + id + '"' + (dis ? ' disabled' : '') + '>' + title + '<small>' + sub + '</small></button>';
+  }
+  function renderMenu() {
+    var box = document.getElementById('menu'), h = '', i;
+    h += '<div class="langs" id="mlangs"></div>';
+    h += '<h1>' + t('title') + '</h1>';
+    if (scr === 'home') {
+      h += tile('play', m('play'), m('playS'), 'main') + tile('day', m('day'), m('dayS'), '');
+    } else if (scr === 'play') {
+      h += '<button type="button" id="mback" style="align-self:flex-start;flex:none">' + m('back') + '</button>';
+      h += '<p class="menu-t">' + m('games') + '</p>';
+      h += tile('rnd', m('rnd'), m('rndS'), 'main');
+      h += tile('', m('g1'), m('soon'), '', true) + tile('', m('g2'), m('soon'), '', true) + tile('', m('g3'), m('soon'), '', true);
+    } else if (scr === 'day') {
+      var ds = dateSeed(), b = bestOf('day-' + ds.n);
+      h += '<button type="button" id="mback" style="align-self:flex-start;flex:none">' + m('back') + '</button>';
+      h += '<p class="menu-t">' + m('daily') + '</p>';
+      h += tile('daily', m('left', ds.no, ds.txt), b === null ? m('fresh') : m('done', b.toFixed(1)), 'main');
+    }
+    box.innerHTML = h;
+    var lb = document.getElementById('mlangs');
+    ORDER.forEach(function (c) {
+      var x = document.createElement('button'); x.type = 'button'; x.textContent = I18N[c].name;
+      if (c === LANG) x.className = 'on';
+      x.addEventListener('click', function () { applyLang(c); });
+      lb.appendChild(x);
+    });
+    var mb = document.getElementById('mback'); if (mb) mb.addEventListener('click', function () { scr = 'home'; renderMenu(); });
+    var ts = box.querySelectorAll('.tile');
+    for (i = 0; i < ts.length; i++) ts[i].addEventListener('click', function () {
+      var id = this.getAttribute('data-id');
+      if (id === 'play') { scr = 'play'; renderMenu(); }
+      else if (id === 'day') { scr = 'day'; renderMenu(); }
+      else if (id === 'daily') { newMaze('daily'); showGame(true); }
+      else if (id === 'rnd') { newMaze('random'); showGame(true); }
+    });
+  }
+  function showGame(on) {
+    document.getElementById('game').hidden = !on;
+    document.getElementById('menu').hidden = on;
+    if (on) { document.getElementById('back').textContent = m('back'); resize(); } else { reset(false); renderMenu(); }
+  }
+  document.getElementById('back').addEventListener('click', function () { showGame(false); });
+  LANG = detect(); newMaze('daily'); applyLang(LANG); renderMenu(); requestAnimationFrame(loop);
 })();
 </script>
 
