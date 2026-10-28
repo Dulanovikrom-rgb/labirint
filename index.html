@@ -19,15 +19,16 @@
 }
 :root[data-theme="dark"] { --bg: #12161D; --fg: #E8ECF2; --muted: #9AA4B5; --line: #2B3342; --panel: #1B212C; --accent: #FF8A57; color-scheme: dark; }
 html, body { overscroll-behavior: none; }
+#game .langs { display: none; }
 body { background: var(--bg); color: var(--fg); font-family: var(--text); font-size: 16px; line-height: 1.45;
-  padding-block: 16px 36px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  padding-block: 12px 16px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 .wrap { max-width: 460px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
 .head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
 h1 { font-family: var(--display); font-weight: 800; font-size: 24px; line-height: 1.1; margin: 0; }
 .sub { margin: 2px 0 0; font-size: 13px; color: var(--muted); font-weight: 700; }
 .timer { font-family: var(--display); font-weight: 800; font-size: 28px; font-variant-numeric: tabular-nums; min-width: 4.6ch; text-align: right; }
 .field { background: var(--sheet); border: 1px solid var(--line); border-radius: 16px; padding: 10px; }
-canvas { display: block; width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; border-radius: 8px; }
+canvas { display: block; margin: 0 auto; width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; border-radius: 8px; }
 .hint { margin: 0; font-size: 14px; color: var(--muted); text-align: center; }
 .row { display: flex; flex-wrap: wrap; gap: 8px; }
 button { font: inherit; font-weight: 700; font-size: 15px; border-radius: 99px; padding: 10px 16px; cursor: pointer; border: 1px solid var(--line); background: transparent; color: var(--fg); flex: 1 1 auto; }
@@ -276,6 +277,16 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
   function resize() {
     var w = cv.parentElement.clientWidth - 20;
     if (w < 100) w = 100;
+    var g = document.getElementById('game');
+    if (!g.hidden) {
+      // подгоняем поле под высоту окна, чтобы всё помещалось без прокрутки
+      var rs = document.getElementById('result');
+      cv.style.width = w + 'px'; cv.style.height = (w * H / W) + 'px';
+      var other = g.offsetHeight - cv.offsetHeight - (rs.hidden ? 0 : rs.offsetHeight + 14);
+      var bp = parseFloat(getComputedStyle(document.body).paddingTop) + parseFloat(getComputedStyle(document.body).paddingBottom);
+      var maxH = (window.innerHeight || 700) - bp - other - 16;
+      if (maxH > 0) w = Math.max(160, Math.min(w, maxH * W / H));
+    }
     cell = w / W; dpr = window.devicePixelRatio || 1;
     cv.style.width = w + 'px'; cv.style.height = (cell * H) + 'px';
     cv.width = Math.round(w * dpr); cv.height = Math.round(cell * H * dpr);
@@ -476,6 +487,7 @@ button.on { background: var(--accent); border-color: var(--accent); color: #1B22
     try { navigator.clipboard.writeText(el.textContent).then(function () { cb.textContent = t('copied'); }, fb); } catch (e) { fb(); }
   });
   window.addEventListener('resize', resize);
+  try { if (window.Telegram && Telegram.WebApp && Telegram.WebApp.onEvent) Telegram.WebApp.onEvent('viewportChanged', resize); } catch (e) {}
 
   // управление наклоном телефона (работает в обычном браузере по ссылке, в предпросмотре может быть закрыто)
   document.getElementById('hintbtn').addEventListener('click', function () {
