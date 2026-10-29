@@ -131,7 +131,7 @@ button.ptile.ok { background: #1F9E96; }
     <div><h1 id="stitle">Змейка</h1><p class="sub" id="slabel"></p></div>
     <div><div class="timer" id="sscore">0</div><div class="stars" id="sbestl"></div></div>
   </div>
-  <div class="bar"><button type="button" id="sback">← Меню</button></div>
+  <div class="bar"><button type="button" id="sback">← Меню</button><button type="button" id="swrap"></button></div>
   <div class="field"><canvas id="scv"></canvas></div>
   <p class="hint" id="shint"></p>
   <p class="hint warn" id="schal" hidden></p>
@@ -659,7 +659,7 @@ button.ptile.ok { background: #1F9E96; }
       h += tile('daily', m('left', ds.no, ds.txt), b === null ? m('fresh') : m('done', b.toFixed(1)), 'main');
       var pb = bestOf('pday-' + ds.n);
       h += tile('pzd', m('pzd', ds.no, ds.txt), pb === null ? m('fresh') : m('done', pb.toFixed(1)), '');
-      var sb = sBest('sday-' + ds.n);
+      var sb = sBest('sday-' + ds.n + (Sn.wrap ? '-w' : ''));
       h += tile('snd', m('snd', ds.no, ds.txt), sb === null ? m('fresh') : m('sbest', sb), '');
       var sk = streakNow(ds.no), yv = parseFloat(lsGet('labirint-dres-' + (ds.no - 1)));
       h += '<p class="hint">' + (sk ? m('streak', sk) + ' · ' : '') + (isNaN(yv) ? '' : m('yest', yv.toFixed(1)) + ' · ') + m('next', untilNext()) + '</p>';
@@ -845,28 +845,28 @@ button.ptile.ok { background: #1F9E96; }
     ru: { score: 'Яблок: {a}', hint: 'Проводи пальцем по полю, чтобы повернуть. Не врезайся в стены и в себя.', start: 'Проведи пальцем, чтобы начать', over: 'Игра окончена: яблок {a}',
       share: '{a}: съел яблок: {b}. Сможешь больше?', bDaily: 'Змейка дня', bRnd: 'Случайная', bReset: 'Заново', rnd: 'Случайная змейка № {a}',
       first: 'Первый результат в этой игре.', rec: 'Новый рекорд! Раньше было {a}.', mine: 'Твой рекорд: {a}.',
-      chal: 'Вызов друга: нужно больше {a}', won: 'Ты обогнал друга на {a}! 🎉', tie: 'Ничья с другом!', lost: 'Друг впереди на {a}. Попробуй ещё!' },
+      chal: 'Вызов друга: нужно больше {a}', won: 'Ты обогнал друга на {a}! 🎉', tie: 'Ничья с другом!', lost: 'Друг впереди на {a}. Попробуй ещё!', mWall: 'Режим: стены', mWrap: 'Режим: сквозь стены' },
     en: { score: 'Apples: {a}', hint: 'Swipe on the board to turn. Do not hit the walls or yourself.', start: 'Swipe to start', over: 'Game over: apples {a}',
       share: '{a}: ate {b} apples. Can you eat more?', bDaily: 'Snake of the Day', bRnd: 'Random', bReset: 'Restart', rnd: 'Random snake #{a}',
       first: 'First result in this game.', rec: 'New record! It was {a}.', mine: 'Your best: {a}.',
-      chal: 'Friend challenge: beat {a}', won: 'You beat your friend by {a}! 🎉', tie: 'Tie with your friend!', lost: 'Your friend is ahead by {a}. Try again!' },
+      chal: 'Friend challenge: beat {a}', won: 'You beat your friend by {a}! 🎉', tie: 'Tie with your friend!', lost: 'Your friend is ahead by {a}. Try again!', mWall: 'Mode: walls', mWrap: 'Mode: wrap-around' },
     uz: { score: 'Olmalar: {a}', hint: 'Burilish uchun maydonda barmog‘ingizni suring. Devor va o‘zingizga urilmang.', start: 'Boshlash uchun barmoqni suring', over: 'O‘yin tugadi: olmalar {a}',
       share: '{a}: {b} ta olma yedim. Sen ko‘proq yeya olasanmi?', bDaily: 'Kun iloni', bRnd: 'Tasodifiy', bReset: 'Qaytadan', rnd: 'Tasodifiy ilon № {a}',
       first: 'Bu o‘yindagi birinchi natija.', rec: 'Yangi rekord! Avval {a} edi.', mine: 'Rekordingiz: {a}.',
-      chal: 'Do‘st chaqirig‘i: {a} dan ko‘p yeng', won: 'Do‘stingizdan {a} ta oldindasiz! 🎉', tie: 'Do‘st bilan durang!', lost: 'Do‘stingiz {a} ta oldinda. Yana urinib ko‘ring!' },
+      chal: 'Do‘st chaqirig‘i: {a} dan ko‘p yeng', won: 'Do‘stingizdan {a} ta oldindasiz! 🎉', tie: 'Do‘st bilan durang!', lost: 'Do‘stingiz {a} ta oldinda. Yana urinib ko‘ring!', mWall: 'Rejim: devorlar', mWrap: 'Rejim: devor orqali' },
     tg: { score: 'Себҳо: {a}', hint: 'Барои гардидан ангуштро дар майдон кашед. Ба девор ва худатон нахӯред.', start: 'Барои оғоз ангуштро кашед', over: 'Бозӣ тамом: себҳо {a}',
       share: '{a}: {b} себ хӯрдам. Метавонӣ бештар бихӯрӣ?', bDaily: 'Морчаи рӯз', bRnd: 'Тасодуфӣ', bReset: 'Аз нав', rnd: 'Морчаи тасодуфӣ № {a}',
       first: 'Натиҷаи аввал дар ин бозӣ.', rec: 'Рекорди нав! Пештар {a} буд.', mine: 'Рекорди шумо: {a}.',
-      chal: 'Даъвати дӯст: аз {a} бештар', won: 'Шумо аз дӯст {a} пеш ҳастед! 🎉', tie: 'Бо дӯст баробар!', lost: 'Дӯст {a} пеш аст. Боз кӯшиш кунед!' },
+      chal: 'Даъвати дӯст: аз {a} бештар', won: 'Шумо аз дӯст {a} пеш ҳастед! 🎉', tie: 'Бо дӯст баробар!', lost: 'Дӯст {a} пеш аст. Боз кӯшиш кунед!', mWall: 'Реҷа: девор', mWrap: 'Реҷа: аз девор гузаштан' },
     kk: { score: 'Алма: {a}', hint: 'Бұрылу үшін алаңда саусақпен сырғытыңыз. Қабырғаға және өзіңізге соғылмаңыз.', start: 'Бастау үшін саусақты сырғытыңыз', over: 'Ойын бітті: алма {a}',
       share: '{a}: {b} алма жедім. Сен көбірек жей аласың ба?', bDaily: 'Күн жыланы', bRnd: 'Кездейсоқ', bReset: 'Қайта', rnd: 'Кездейсоқ жылан № {a}',
       first: 'Бұл ойындағы алғашқы нәтиже.', rec: 'Жаңа рекорд! Бұрын {a} болды.', mine: 'Рекордыңыз: {a}.',
-      chal: 'Дос шақыруы: {a}-дан көп жеңіз', won: 'Сіз доспен салыстырғанда {a} алға шықтыңыз! 🎉', tie: 'Достан тең!', lost: 'Дос {a} алда. Қайтадан көріңіз!' }
+      chal: 'Дос шақыруы: {a}-дан көп жеңіз', won: 'Сіз доспен салыстырғанда {a} алға шықтыңыз! 🎉', tie: 'Достан тең!', lost: 'Дос {a} алда. Қайтадан көріңіз!', mWall: 'Режим: қабырға', mWrap: 'Режим: қабырғадан өту' }
   };
   function sn(k, a, b) { return (SN[LANG] || SN.en)[k].replace('{a}', a).replace('{b}', b); }
   var COLS = 14, ROWS = 18;
   var scv = document.getElementById('scv'), sctx = scv.getContext('2d');
-  var Sn = { mode: 'daily', key: '', no: 0, txt: '', n: 0, seed: 1, rnd: null, body: [], dir: [1, 0], q: [], apple: null, score: 0, state: 'wait', acc: 0, last: 0, cell: 20, link: BOT, res: null };
+  var Sn = { wrap: lsGet('labirint-swrap') === '1', mode: 'daily', key: '', no: 0, txt: '', n: 0, seed: 1, rnd: null, body: [], dir: [1, 0], q: [], apple: null, score: 0, state: 'wait', acc: 0, last: 0, cell: 20, link: BOT, res: null };
   function snRand(seed) { var x = (seed % 2147483646) + 1; return function () { x = (x * 16807) % 2147483647; return (x - 1) / 2147483646; }; }
   function snApple() {
     var free = [], x, y, i;
@@ -888,10 +888,11 @@ button.ptile.ok { background: #1F9E96; }
     Sn.mode = mode;
     if (mode === 'daily') { var ds = dateSeed(); Sn.no = ds.no; Sn.txt = ds.txt; Sn.seed = ds.n * 5 + 3; Sn.key = 'sday-' + ds.n; Sn.n = 0; }
     else { Sn.seed = Math.floor(Math.random() * 1000000) + 1; Sn.n = Sn.seed; Sn.key = 'srnd-' + Sn.seed; }
+    if (Sn.wrap) Sn.key += '-w';
     snInit(); snFit();
   }
   function sBest(key) { try { var v = parseInt(localStorage.getItem('labirint2-sbest-' + key), 10); return isNaN(v) ? null : v; } catch (e) { return null; } }
-  function snLabel() { return Sn.mode === 'daily' ? m('snd', Sn.no, Sn.txt) : sn('rnd', Sn.n); }
+  function snLabel() { return (Sn.mode === 'daily' ? m('snd', Sn.no, Sn.txt) : sn('rnd', Sn.n)) + ' · ' + sn(Sn.wrap ? 'mWrap' : 'mWall').replace(/^[^:]*: /, ''); }
   function snTexts() {
     document.getElementById('stitle').textContent = m('g2');
     document.getElementById('slabel').textContent = snLabel();
@@ -901,7 +902,8 @@ button.ptile.ok { background: #1F9E96; }
     document.getElementById('srandom').textContent = sn('bRnd');
     document.getElementById('sreset').textContent = sn('bReset');
     document.getElementById('sback').textContent = m('back');
-    var c = document.getElementById('schal'), ok = sChal && Sn.mode === 'daily' && sChal.no === Sn.no;
+    document.getElementById('swrap').textContent = sn(Sn.wrap ? 'mWrap' : 'mWall');
+    var c = document.getElementById('schal'), ok = sChal && Sn.mode === 'daily' && sChal.no === Sn.no && sChal.w === Sn.wrap;
     c.hidden = !ok; if (ok) c.textContent = sn('chal', sChal.score);
     if (Sn.res) snResultText();
   }
@@ -942,7 +944,8 @@ button.ptile.ok { background: #1F9E96; }
         sctx.beginPath(); sctx.arc(cx + ex * s * 0.2 + px * sg * s * 0.18, cy + ey * s * 0.2 + py * sg * s * 0.18, s * 0.045, 0, 6.283); sctx.fillStyle = '#22304A'; sctx.fill();
       });
     }
-    sctx.lineWidth = 3 * d; sctx.strokeStyle = '#22304A'; sctx.strokeRect(1.5 * d, 1.5 * d, scv.width - 3 * d, scv.height - 3 * d);
+    sctx.lineWidth = 3 * d; sctx.strokeStyle = Sn.wrap ? '#1F9E96' : '#22304A'; sctx.setLineDash(Sn.wrap ? [8 * d, 6 * d] : []);
+    sctx.strokeRect(1.5 * d, 1.5 * d, scv.width - 3 * d, scv.height - 3 * d); sctx.setLineDash([]);
   }
   function snTurn(dx, dy) {
     if (Sn.state === 'over') return;
@@ -955,7 +958,8 @@ button.ptile.ok { background: #1F9E96; }
   function snStep() {
     if (Sn.q.length) Sn.dir = Sn.q.shift();
     var h = Sn.body[0], nx = h[0] + Sn.dir[0], ny = h[1] + Sn.dir[1], i;
-    if (nx < 0 || ny < 0 || nx >= COLS || ny >= ROWS) return snOver();
+    if (Sn.wrap) { nx = (nx + COLS) % COLS; ny = (ny + ROWS) % ROWS; }
+    else if (nx < 0 || ny < 0 || nx >= COLS || ny >= ROWS) return snOver();
     var eat = Sn.apple && nx === Sn.apple[0] && ny === Sn.apple[1];
     var lim = eat ? Sn.body.length : Sn.body.length - 1;
     for (i = 0; i < lim; i++) if (Sn.body[i][0] === nx && Sn.body[i][1] === ny) return snOver();
@@ -967,8 +971,8 @@ button.ptile.ok { background: #1F9E96; }
     Sn.state = 'over';
     var best = sBest(Sn.key), isBest = best === null || Sn.score > best;
     if (isBest) lsSet('labirint2-sbest-' + Sn.key, String(Sn.score));
-    if (Sn.mode === 'daily') { var d0 = parseInt(lsGet('labirint-sres-' + Sn.no), 10); if (isNaN(d0) || Sn.score > d0) lsSet('labirint-sres-' + Sn.no, String(Sn.score)); }
-    var ch; if (sChal && Sn.mode === 'daily' && sChal.no === Sn.no) ch = Sn.score - sChal.score;
+    if (Sn.mode === 'daily') { var sk0 = 'labirint-sres-' + Sn.no + (Sn.wrap ? 'w' : ''), d0 = parseInt(lsGet(sk0), 10); if (isNaN(d0) || Sn.score > d0) lsSet(sk0, String(Sn.score)); }
+    var ch; if (sChal && Sn.mode === 'daily' && sChal.no === Sn.no && sChal.w === Sn.wrap) ch = Sn.score - sChal.score;
     Sn.res = { score: Sn.score, best: best, isBest: isBest, ch: ch };
     document.getElementById('sresult').hidden = false;
     snResultText(); snFit(); snDraw();
@@ -979,7 +983,7 @@ button.ptile.ok { background: #1F9E96; }
     try {
       var inTg = !!(window.Telegram && Telegram.WebApp && Telegram.WebApp.initData);
       if (!inTg) link = (/^https?:$/.test(location.protocol) && !/claudeusercontent\.com/.test(location.href)) ? location.origin + location.pathname : '';
-      else if (Sn.mode === 'daily') link = BOT + '/' + APP + '?startapp=s' + Sn.no + '_' + R.score;
+      else if (Sn.mode === 'daily') link = BOT + '/' + APP + '?startapp=s' + Sn.no + '_' + R.score + (Sn.wrap ? 'w' : '');
     } catch (e) {}
     Sn.link = link;
     document.getElementById('srt').textContent = sn('over', R.score);
@@ -1001,7 +1005,7 @@ button.ptile.ok { background: #1F9E96; }
     if (!document.getElementById('snk').hidden && Sn.state === 'run') {
       if (!Sn.last) Sn.last = ts;
       Sn.acc += ts - Sn.last; Sn.last = ts;
-      var iv = Math.max(65, 150 - Sn.score * 3);
+      var iv = Math.max(110, 230 - Sn.score * 3);
       while (Sn.acc >= iv && Sn.state === 'run') { Sn.acc -= iv; snStep(); }
       snDraw();
     } else Sn.last = 0;
@@ -1026,6 +1030,7 @@ button.ptile.ok { background: #1F9E96; }
     e.preventDefault();
   });
   document.getElementById('sback').addEventListener('click', function () { showSn(false); });
+  document.getElementById('swrap').addEventListener('click', function () { Sn.wrap = !Sn.wrap; lsSet('labirint-swrap', Sn.wrap ? '1' : '0'); snNew(Sn.mode); });
   document.getElementById('sdaily').addEventListener('click', function () { snNew('daily'); });
   document.getElementById('srandom').addEventListener('click', function () { snNew('random'); });
   document.getElementById('sreset').addEventListener('click', function () { snInit(); snFit(); });
@@ -1054,13 +1059,13 @@ button.ptile.ok { background: #1F9E96; }
     if (mm) challenge = { no: parseInt(mm[1], 10), time: parseInt(mm[2], 10) / 10 };
     var mp = /^p(\d+)_(\d+)$/.exec(sp || '');
     if (mp) pChal = { no: parseInt(mp[1], 10), time: parseInt(mp[2], 10) / 10 };
-    var ms2 = /^s(\d+)_(\d+)$/.exec(sp || '');
-    if (ms2) sChal = { no: parseInt(ms2[1], 10), score: parseInt(ms2[2], 10) };
+    var ms2 = /^s(\d+)_(\d+)(w?)$/.exec(sp || '');
+    if (ms2) sChal = { no: parseInt(ms2[1], 10), score: parseInt(ms2[2], 10), w: ms2[3] === 'w' };
   } catch (e) {}
   LANG = detect(); newMaze('daily'); applyLang(LANG); renderMenu(); requestAnimationFrame(loop);
   if (challenge && challenge.no === lab.no) showGame(true);
   else if (pChal && pChal.no === dateSeed().no) showPuz(true, 'daily');
-  else if (sChal && sChal.no === dateSeed().no) showSn(true, 'daily');
+  else if (sChal && sChal.no === dateSeed().no) { Sn.wrap = sChal.w; showSn(true, 'daily'); }
 })();
 </script>
 
