@@ -83,6 +83,7 @@ button.mcard.ok { background: var(--tile-ok, #1F9E96); }
 .onb .big { font-size: 72px; line-height: 1; }
 .onb h2 { font-family: var(--display); font-weight: 800; font-size: 26px; margin: 0; }
 .onb p { margin: 0; max-width: 320px; color: var(--muted); font-weight: 700; }
+.onb button { flex: none; height: auto; min-height: 0; padding: 14px 28px; }
 .onb .dots { display: flex; gap: 8px; } .onb .dots i { width: 10px; height: 10px; border-radius: 50%; background: var(--line); } .onb .dots i.on { background: var(--accent); }
 </style>
 </head>
@@ -1009,7 +1010,7 @@ button.mcard.ok { background: var(--tile-ok, #1F9E96); }
     var pg = 0, E = ['🎮', '🪙', '🎨'], o = document.createElement('div'); o.className = 'onb'; document.body.appendChild(o);
     function draw() {
       var n = pg + 1;
-      o.innerHTML = '<div class="big">' + E[pg] + '</div><h2>' + m('onbT' + n) + '</h2><p>' + m('onbD' + n) + '</p><div class="dots">' + [0, 1, 2].map(function (i) { return '<i class="' + (i === pg ? 'on' : '') + '"></i>'; }).join('') + '</div><button type="button" class="main" id="onbn" style="min-width:200px">' + (pg < 2 ? m('onbNext') : m('onbGo')) + '</button>';
+      o.innerHTML = '<div class="big">' + E[pg] + '</div><h2>' + m('onbT' + n) + '</h2><p>' + m('onbD' + n) + '</p><div class="dots">' + [0, 1, 2].map(function (i) { return '<i class="' + (i === pg ? 'on' : '') + '"></i>'; }).join('') + '</div><button type="button" class="main" id="onbn" style="min-width:220px;flex:none;height:auto">' + (pg < 2 ? m('onbNext') : m('onbGo')) + '</button>';
       document.getElementById('onbn').addEventListener('click', function () {
         if (pg < 2) { pg++; draw(); } else { lsSet('labirint-onb', '1'); o.remove(); reward(10); renderMenu(); }
       });
