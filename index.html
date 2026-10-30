@@ -69,6 +69,21 @@ button.ptile.ok { background: var(--tile-ok, #1F9E96); color: var(--on-accent, #
 .wheel span { position: absolute; left: calc(50% - 22px); top: calc(50% - 13px); width: 44px; text-align: center; font-family: var(--display); font-weight: 800; font-size: 19px; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.65); }
 .wptr { position: absolute; top: -8px; left: 50%; margin-left: -13px; border: 13px solid transparent; border-top: 24px solid var(--fg); z-index: 2; }
 .wres { text-align: center; font-family: var(--display); font-weight: 800; font-size: 18px; min-height: 26px; margin: 0; }
+
+.cfloat { position: fixed; top: 14px; right: 16px; z-index: 50; font-family: var(--display); font-weight: 800; font-size: 22px; color: var(--ink); background: var(--accent); border-radius: 20px; padding: 4px 14px; animation: cf 1.5s ease forwards; pointer-events: none; }
+@keyframes cf { 0% { opacity: 0; transform: translateY(12px); } 15% { opacity: 1; } 100% { opacity: 0; transform: translateY(-36px); } }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.grid2 .tile { padding: 12px; font-size: 16px; }
+.mgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+button.mcard { aspect-ratio: 1; padding: 0; border: none; border-radius: 12px; font-size: clamp(26px, 9vw, 40px); background: var(--tile, #F2733A); color: #fff; box-shadow: inset 0 -4px 0 rgba(0,0,0,.18); display: flex; align-items: center; justify-content: center; }
+button.mcard.up { background: var(--sheet); border: 2px solid var(--line); box-shadow: none; }
+button.mcard.ok { background: var(--tile-ok, #1F9E96); }
+.pin { width: 100%; box-sizing: border-box; font-size: 20px; font-weight: 800; padding: 12px 14px; border-radius: 14px; border: 2px solid var(--line); background: var(--sheet); color: var(--fg); text-transform: uppercase; }
+.onb { position: fixed; inset: 0; z-index: 100; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px; text-align: center; }
+.onb .big { font-size: 72px; line-height: 1; }
+.onb h2 { font-family: var(--display); font-weight: 800; font-size: 26px; margin: 0; }
+.onb p { margin: 0; max-width: 320px; color: var(--muted); font-weight: 700; }
+.onb .dots { display: flex; gap: 8px; } .onb .dots i { width: 10px; height: 10px; border-radius: 50%; background: var(--line); } .onb .dots i.on { background: var(--accent); }
 </style>
 </head>
 <body>
@@ -157,6 +172,14 @@ button.ptile.ok { background: var(--tile-ok, #1F9E96); color: var(--on-accent, #
   </div>
 </div>
 
+<div class="wrap" id="mem" hidden>
+  <div class="head"><div><h1 id="mtitle"></h1><p class="sub" id="mstat"></p></div><div><div class="timer" id="mtimer">0.0</div></div></div>
+  <div class="bar"><button type="button" id="mback2"></button><button type="button" id="mmode"></button></div>
+  <div class="field"><div class="mgrid" id="mgrid"></div></div>
+  <p class="hint warn" id="mres" hidden></p>
+  <div class="row"><button type="button" id="mnew" class="main"></button></div>
+</div>
+
 <script>
 (function () {
   var W = 7, H = 10;
@@ -165,8 +188,8 @@ button.ptile.ok { background: var(--tile-ok, #1F9E96); color: var(--on-accent, #
   var PALS = {
     gold:   { cost: 0,  accent: '#F0A800', onAccent: '#1B2230', tile: '#2F5BD3', tileOk: '#F0A800', wall: '#2F5BD3', ball: '#F0A800', snake: '#2F5BD3', snakeHead: '#1E3A8A', apple: '#F0A800', leaf: '#2F5BD3', sw: ['#F0A800', '#2F5BD3'] },
     orange: { cost: 0,  accent: '#E8622A', onAccent: '#1B2230', tile: '#F2733A', tileOk: '#1F9E96', wall: '#F2733A', ball: '#EF5B2A', snake: '#1F9E96', snakeHead: '#16756F', apple: '#EF5B2A', leaf: '#1F9E96', sw: ['#F2733A', '#1F9E96'] },
-    teal:   { cost: 40, accent: '#1F9E96', onAccent: '#FFFFFF', tile: '#1F9E96', tileOk: '#F5C242', wall: '#1F9E96', ball: '#EF5B2A', snake: '#F2733A', snakeHead: '#C2501A', apple: '#EF5B2A', leaf: '#1F9E96', sw: ['#1F9E96', '#F5C242'] },
-    violet: { cost: 80, accent: '#8B5CF6', onAccent: '#FFFFFF', tile: '#7C3AED', tileOk: '#F5C242', wall: '#7C3AED', ball: '#F5C242', snake: '#7C3AED', snakeHead: '#4C1D95', apple: '#F5C242', leaf: '#F5C242', sw: ['#8B5CF6', '#F5C242'] }
+    teal:   { cost: 100, accent: '#1F9E96', onAccent: '#FFFFFF', tile: '#1F9E96', tileOk: '#F5C242', wall: '#1F9E96', ball: '#EF5B2A', snake: '#F2733A', snakeHead: '#C2501A', apple: '#EF5B2A', leaf: '#1F9E96', sw: ['#1F9E96', '#F5C242'] },
+    violet: { cost: 200, accent: '#8B5CF6', onAccent: '#FFFFFF', tile: '#7C3AED', tileOk: '#F5C242', wall: '#7C3AED', ball: '#F5C242', snake: '#7C3AED', snakeHead: '#4C1D95', apple: '#F5C242', leaf: '#F5C242', sw: ['#8B5CF6', '#F5C242'] }
   };
   var PAL = PALS.gold, PALORDER = ['gold', 'orange', 'teal', 'violet'];
   function applyPal(id) {
@@ -391,6 +414,8 @@ button.ptile.ok { background: var(--tile-ok, #1F9E96); color: var(--on-accent, #
 
   function newMaze(m) {
     mode = m;
+    var LV = [[5, 7], [7, 10], [9, 13]][lvlN()] || [7, 10];
+    if (m === 'daily') { W = 7; H = 10; } else { W = LV[0]; H = LV[1]; }
     if (m === 'daily') { var ds = dateSeed(); build(ds.n); lab = { kind: 'daily', no: ds.no, txt: ds.txt, n: 0 }; mazeKey = 'day-' + ds.n; }
     else { var s = Math.floor(Math.random() * 1000000) + 1; build(s); lab = { kind: 'rnd', no: 0, txt: '', n: s }; mazeKey = 'rnd-' + s; }
     document.getElementById('label').textContent = labelText();
@@ -467,7 +492,7 @@ button.ptile.ok { background: var(--tile-ok, #1F9E96); color: var(--on-accent, #
     try { var b = parseFloat(localStorage.getItem(key)); if (!isNaN(b)) best = b; } catch (e) {}
     var isBest = best === null || fin < best;
     if (isBest) { try { localStorage.setItem(key, String(fin)); } catch (e) {} }
-    addCoins(3);
+    reward(1); taskDone('m'); incStat('mz'); sfx('win');
     if (lab.kind === 'daily') recordDaily(lab.no, fin);
     var chd; if (challenge && lab.kind === 'daily' && challenge.no === lab.no) chd = challenge.time - fin;
     res = { ch: chd, time: fin, base: elapsed, pen: pen, best: best, isBest: isBest, stars: starsGot };
@@ -642,23 +667,111 @@ button.ptile.ok { background: var(--tile-ok, #1F9E96); color: var(--on-accent, #
       done: 'Дайын: {a} сек. Ертең жаңа карта', fresh: 'Бүгін әлі ойналмаған', go: 'Ойнау', games: 'Ойындар', daily: 'Күн ойындары',
       g1: 'Бессаяқ жұмбақ', g2: 'Жылан', g3: 'Жады', streak: '🔥 Серия: {a} күн', yest: 'Кеше: {a} сек', next: 'Жаңа карта {a} кейін', h: 'сағ', mi: 'мин', chal: 'Дос шақыруы: {a} секундтан жылдам өтіңіз', won: 'Сіз доспен салыстырғанда {a} сек жылдамсыз! 🎉', lost: 'Дос {a} сек жылдамырақ. Қайтадан көріңіз!', pzS: 'Сандарды ретімен қойыңыз', pzd: 'Күн бессаяғы № {a}, {b}', snS: 'Алма жеңіз, соғылмаңыз', snd: 'Күн жыланы № {a}, {b}', sbest: 'Рекорд: {a}', coins: 'Тиындар', wheel: '🎡 Күн доңғалағы', wheelS: 'Күніне бір рет айналдырып, тиын ұтыңыз', spin: 'Айналдыру', wheelWait: 'Келесі айналдыру: {a}', wheelWon: 'Сіз {a} 🪙 ұттыңыз!', skins: '🎨 Түстер', skinsS: 'Тиындар жаңа түстерді ашады', owned: 'Ашық', chosen: 'Таңдалды ✓', need: '{a} 🪙 керек', buy: '{a} 🪙 үшін ашу', p0: 'Алтын және көк', p1: 'Қызғылт сары', p2: 'Көгілдір', p3: 'Күлгін' }
   };
-  function m(k, a, b) { var d = MENU[LANG] || MENU.en, v = d[k]; if (v === undefined) v = MENU.en[k]; return v.replace('{a}', a).replace('{b}', b); }
+  function m(k, a, b) { var d = MENU[LANG] || MENU.en, v = d[k]; if (v === undefined) v = ((LANG === 'uz' || LANG === 'tg' || LANG === 'kk') ? MENU.ru : MENU.en)[k]; if (v === undefined) v = MENU.en[k] || ''; return v.replace('{a}', a).replace('{b}', b); }
   var scr = 'home', wheelRot = 0;
   function coins() { var v = parseInt(lsGet('labirint-coins'), 10); return isNaN(v) ? 0 : v; }
   function addCoins(n) { lsSet('labirint-coins', String(coins() + n)); }
   function ownedPals() { var a = []; try { a = JSON.parse(lsGet('labirint-pals')) || []; } catch (e) {} return a; }
   function isOwned(id) { return PALS[id].cost === 0 || ownedPals().indexOf(id) >= 0; }
   function curPal() { var c = lsGet('labirint-pal'); return PALS[c] ? c : 'gold'; }
-  var BALLS = [{id:'b0',cost:0,e:'',n:'⚪'},{id:'b1',cost:30,e:'⚽',n:'⚽'},{id:'b2',cost:30,e:'🌙',n:'🌙'},{id:'b3',cost:50,e:'🔥',n:'🔥'}];
-  var SNKS = [{id:'s0',cost:0,st:'',k:'stN'},{id:'s1',cost:30,st:'round',k:'stR'},{id:'s2',cost:60,st:'rainbow',k:'stB'}];
-  var LIFE_COST = 15;
+  var BALLS = [{id:'b0',cost:0,e:'',n:'⚪'},{id:'b1',cost:100,e:'⚽',n:'⚽'},{id:'b2',cost:100,e:'🌙',n:'🌙'},{id:'b3',cost:300,e:'🔥',n:'🔥'}];
+  var SNKS = [{id:'s0',cost:0,st:'',k:'stN'},{id:'s1',cost:100,st:'round',k:'stR'},{id:'s2',cost:300,st:'rainbow',k:'stB'}];
+  var LIFE_COST = 25;
   function items() { var a = []; try { a = JSON.parse(lsGet('labirint-items')) || []; } catch (e) {} return a; }
   function hasItem(o) { return o.cost === 0 || items().indexOf(o.id) >= 0; }
   function findIn(L, id) { var i; for (i = 0; i < L.length; i++) if (L[i].id === id) return L[i]; return L[0]; }
   function curBall() { return findIn(BALLS, lsGet('labirint-ball')); }
   function curSnk() { return findIn(SNKS, lsGet('labirint-snk')); }
   function lives() { var v = parseInt(lsGet('labirint-lives'), 10); return isNaN(v) ? 0 : v; }
-    var WVAL = [5, 10, 5, 15, 10, 25, 5, 50], WW = [22, 14, 22, 10, 14, 6, 22, 2];
+  
+  var X = {
+    ru: { gift: '🎁 Бонус за вход', giftA: 'Забери: день {a} из 7', giftW: 'Завтра снова · день {a} из 7', tasks: '📋 Задания дня', tasksS: 'Выполнено {a} из 3', tkT: 'Задания дня', tk_m: 'Пройди лабиринт', tk_p: 'Собери пятнашки', tk_s: 'Набери 10 яблок в змейке', tkDone: 'Готово ✓', tkOpen: 'Награда +3 🪙',
+      promo: '🎟 Промокод', promoS: 'Коды из канала', promoT: 'Введи промокод', promoGo: 'Применить', promoOk: 'Принято! +{a} 🪙', promoBad: 'Такого кода нет', promoUsed: 'Этот код уже был', promoPh: 'Код',
+      badges: '🏅 Значки', badgesS: 'Получено {a} из 9', bdT: 'Значки', got: 'Получено ✓', locked: 'Пока закрыто',
+      bd1: '🧭 Первый лабиринт', bd2: '🧩 Первые пятнашки', bd3: '🐍 Первая змейка', bd4: '🃏 Первое мемори', bd5: '🔥 3 дня подряд', bd6: '🌟 7 дней подряд', bd7: '🎡 Колесо 7 раз', bd8: '💎 3 покупки', bd9: '🎯 50 игр',
+      rec: '📊 Рекорды', recS: 'Твои результаты', recT: 'Твои рекорды', rMaze: 'Лабиринт дня', rPuz: 'Пятнашки дня', rSn: 'Змейка дня', rMem: 'Мемори, лучшее', rStreak: 'Серия дней входа', rGames: 'Сыграно игр', none: 'пока нет', moves: 'ходов',
+      inv: '👥 Позвать друга', invS: 'Друг получит 20 🪙', invTxt: 'Играй со мной в «Лабиринт дня»: новая карта каждый день!',
+      sfxOn: '🔊 Звук: вкл', sfxOff: '🔇 Звук: выкл', sfxS: 'Звук и вибрация',
+      lvl: '🎚 Сложность', lvl0: 'Лёгкий', lvl1: 'Обычный', lvl2: 'Сложный', lvlS: 'Для случайных лабиринтов: {a}',
+      mem: '🃏 Мемори', memS: 'Найди пары, можно вдвоём', memT: 'Мемори', mem1: '1 игрок', mem2: '2 игрока', memNew: 'Заново', memMoves: 'Ходы: {a}', memP: 'Ход игрока {a}. Счёт {b}', memWin1: 'Готово: {a} сек, ходов: {b}', memBest: 'Рекорд: {a} ходов', memWin2: 'Победил игрок {a}! Счёт {b}', memTie: 'Ничья!',
+      shield: '🛡 Защита серии', shieldS: 'Спасёт серию, если пропустил день. Есть: {a} · {b}', fri: '🔥 Пятница: монеты ×2',
+      onbT1: 'Играй каждый день', onbD1: 'Новая карта для всех в полночь по Москве. Побей время друзей.', onbT2: 'Собирай монеты', onbD2: 'Колесо, бонус за вход и задания дают монеты каждый день.', onbT3: 'Меняй цвета и скины', onbD3: 'Копи монеты и открывай новые цвета для шарика и змейки.', onbNext: 'Дальше', onbGo: 'Начать (+10 🪙)' },
+    en: { gift: '🎁 Daily bonus', giftA: 'Claim: day {a} of 7', giftW: 'Come back tomorrow · day {a} of 7', tasks: '📋 Daily tasks', tasksS: 'Done {a} of 3', tkT: 'Daily tasks', tk_m: 'Finish a maze', tk_p: 'Solve the puzzle', tk_s: 'Eat 10 apples in Snake', tkDone: 'Done ✓', tkOpen: 'Reward +3 🪙',
+      promo: '🎟 Promo code', promoS: 'Codes from the channel', promoT: 'Enter a promo code', promoGo: 'Apply', promoOk: 'Accepted! +{a} 🪙', promoBad: 'No such code', promoUsed: 'You already used this code', promoPh: 'Code',
+      badges: '🏅 Badges', badgesS: 'Earned {a} of 9', bdT: 'Badges', got: 'Earned ✓', locked: 'Locked',
+      bd1: '🧭 First maze', bd2: '🧩 First puzzle', bd3: '🐍 First snake', bd4: '🃏 First memory', bd5: '🔥 3 days in a row', bd6: '🌟 7 days in a row', bd7: '🎡 Wheel 7 times', bd8: '💎 3 purchases', bd9: '🎯 50 games',
+      rec: '📊 Records', recS: 'Your results', recT: 'Your records', rMaze: 'Maze of the Day', rPuz: 'Puzzle of the Day', rSn: 'Snake of the Day', rMem: 'Memory, best', rStreak: 'Login streak', rGames: 'Games played', none: 'none yet', moves: 'moves',
+      inv: '👥 Invite a friend', invS: 'Your friend gets 20 🪙', invTxt: 'Play Maze of the Day with me: a new map every day!',
+      sfxOn: '🔊 Sound: on', sfxOff: '🔇 Sound: off', sfxS: 'Sound and vibration',
+      lvl: '🎚 Difficulty', lvl0: 'Easy', lvl1: 'Normal', lvl2: 'Hard', lvlS: 'For random mazes: {a}',
+      mem: '🃏 Memory', memS: 'Find the pairs, 2 players too', memT: 'Memory', mem1: '1 player', mem2: '2 players', memNew: 'Restart', memMoves: 'Moves: {a}', memP: 'Player {a} to move. Score {b}', memWin1: 'Done: {a} sec, moves: {b}', memBest: 'Best: {a} moves', memWin2: 'Player {a} wins! Score {b}', memTie: 'Draw!',
+      shield: '🛡 Streak shield', shieldS: 'Saves your streak if you miss a day. You have: {a} · {b}', fri: '🔥 Friday: coins ×2',
+      onbT1: 'Play every day', onbD1: 'A new map for everyone at midnight Moscow time. Beat your friends.', onbT2: 'Collect coins', onbD2: 'The wheel, login bonus and daily tasks give coins every day.', onbT3: 'Change colors and skins', onbD3: 'Save coins and unlock new colors for the ball and the snake.', onbNext: 'Next', onbGo: 'Start (+10 🪙)' }
+  };
+  (function () { var l, k; for (l in X) for (k in X[l]) MENU[l][k] = X[l][k]; })();
+  var PROMOS = { 'ЗОЛОТО': 20, 'GOLD': 20, 'ЛАБИРИНТ': 30, 'ДРУГ': 15, 'START': 25 };
+  function lvlN() { var v = parseInt(lsGet('labirint-lvl'), 10); return isNaN(v) ? 1 : v; }
+  function today() { return dateSeed().no; }
+  function isFri() { return new Date(Date.now() + 3 * 3600000).getUTCDay() === 5; }
+  function stats() { var o = {}; try { o = JSON.parse(lsGet('labirint-stats')) || {}; } catch (e) {} return o; }
+  function incStat(k) { var o = stats(); o[k] = (o[k] || 0) + 1; lsSet('labirint-stats', JSON.stringify(o)); }
+  function coinFloat(n) {
+    var o = document.querySelector('.cfloat'); if (o) o.remove();
+    var d = document.createElement('div'); d.className = 'cfloat'; d.textContent = '+' + n + ' 🪙'; document.body.appendChild(d);
+    setTimeout(function () { if (d.parentNode) d.remove(); }, 1600);
+  }
+  var AC = null;
+  function tone(f, t0, d) {
+    var o = AC.createOscillator(), g = AC.createGain(); o.type = 'sine'; o.frequency.value = f;
+    g.gain.setValueAtTime(0.12, AC.currentTime + t0); g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + t0 + d);
+    o.connect(g); g.connect(AC.destination); o.start(AC.currentTime + t0); o.stop(AC.currentTime + t0 + d + 0.02);
+  }
+  function sfx(k) {
+    if (lsGet('labirint-sfx') === '0') return;
+    try {
+      var tw2 = window.Telegram && Telegram.WebApp, hf = tw2 && tw2.HapticFeedback;
+      if (hf) { if (k === 'win') hf.notificationOccurred('success'); else if (k === 'bad') hf.notificationOccurred('error'); else hf.impactOccurred('light'); }
+      else if (navigator.vibrate) navigator.vibrate(k === 'win' ? 60 : (k === 'bad' ? 120 : 12));
+    } catch (e) {}
+    try {
+      AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+      if (AC.state === 'suspended') AC.resume();
+      if (k === 'win') { tone(523, 0, 0.14); tone(659, 0.12, 0.14); tone(784, 0.24, 0.25); }
+      else if (k === 'coin') { tone(880, 0, 0.1); tone(1320, 0.09, 0.16); }
+      else if (k === 'bad') { tone(260, 0, 0.18); tone(170, 0.15, 0.3); }
+      else tone(640, 0, 0.05);
+    } catch (e) {}
+  }
+  function reward(n) { var v = n * (isFri() ? 2 : 1); addCoins(v); coinFloat(v); sfx('coin'); return v; }
+  function tasksNow() { var o = null; try { o = JSON.parse(lsGet('labirint-tasks')); } catch (e) {} if (!o || o.n !== today()) o = { n: today(), m: 0, p: 0, s: 0 }; return o; }
+  function taskDone(k) {
+    var o = tasksNow(); if (o[k]) return;
+    o[k] = 1; lsSet('labirint-tasks', JSON.stringify(o)); setTimeout(function () { reward(3); }, 900);
+  }
+  function loginState() { var o = null; try { o = JSON.parse(lsGet('labirint-login')); } catch (e) {} return o || { last: 0, count: 0 }; }
+  function giftAvail() { return loginState().last !== today(); }
+  function giftNextDay() {
+    var st = loginState(), n = today(), c;
+    if (st.last === n) c = st.count; else if (st.last === n - 1) c = st.count + 1; else if (st.last === n - 2 && shields() > 0) c = st.count + 1; else c = 1;
+    return c;
+  }
+  function shields() { var v = parseInt(lsGet('labirint-shield'), 10); return isNaN(v) ? 0 : v; }
+  function giftClaim() {
+    var st = loginState(), n = today(), c = giftNextDay();
+    if (st.last === n) return;
+    if (st.last === n - 2 && shields() > 0 && c === st.count + 1) lsSet('labirint-shield', String(shields() - 1));
+    var day = ((c - 1) % 7) + 1;
+    lsSet('labirint-login', JSON.stringify({ last: n, count: c }));
+    var s2 = stats(); s2.lm = Math.max(s2.lm || 0, c); lsSet('labirint-stats', JSON.stringify(s2));
+    reward(5 + (day === 7 ? 20 : 0));
+  }
+  var SHIELD_COST = 40;
+  function badgeList() {
+    var s2 = stats(), own = items().length + ownedPals().length, g = (s2.mz || 0) + (s2.pz || 0) + (s2.sn || 0) + (s2.mm || 0);
+    return [['bd1', s2.mz >= 1], ['bd2', s2.pz >= 1], ['bd3', s2.sn >= 1], ['bd4', s2.mm >= 1], ['bd5', s2.lm >= 3], ['bd6', s2.lm >= 7], ['bd7', s2.sp >= 7], ['bd8', own >= 3], ['bd9', g >= 50]];
+  }
+  function badgeCount() { return badgeList().filter(function (b) { return b[1]; }).length; }
+  var WVAL = [2, 5, 2, 10, 5, 20, 2, 50], WW = [22, 14, 22, 10, 14, 6, 22, 2];
   function wheelAvail() { return lsGet('labirint-wheel') !== String(dateSeed().n); }
   function wheelPick() { var t0 = WW.reduce(function (a, b) { return a + b; }, 0), x = Math.random() * t0, i; for (i = 0; i < WW.length; i++) { x -= WW[i]; if (x < 0) return i; } return 0; }
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -688,15 +801,22 @@ button.ptile.ok { background: var(--tile-ok, #1F9E96); color: var(--on-accent, #
     var box = document.getElementById('menu'), h = '', i;
     h += '<div class="langs" id="mlangs"></div>';
     h += '<h1>' + t('title') + '</h1>';
-    if (scr === 'home' || scr === 'wheel' || scr === 'skins') h += '<p class="sub">🪙 ' + m('coins') + ': ' + coins() + '</p>';
+    if (scr !== 'play' && scr !== 'day') h += '<p class="sub">🪙 ' + m('coins') + ': ' + coins() + '</p>';
     if (scr === 'home') {
       h += tile('play', m('play'), m('playS'), 'main') + tile('day', m('day'), m('dayS'), '');
+      if (isFri()) h += '<p class="sub">' + m('fri') + '</p>';
+      var gv = giftAvail(), gd = ((giftNextDay() - 1) % 7) + 1, tk = tasksNow();
+      h += tile('gift', m('gift'), gv ? m('giftA', gd) : m('giftW', ((giftNextDay()) % 7) + 1), gv ? 'main' : '');
       h += tile('wheel', m('wheel'), wheelAvail() ? m('wheelS') : m('wheelWait', untilNext()), '') + tile('skins', m('skins'), m('skinsS'), '');
+      h += '<div class="grid2">' + tile('tasks', m('tasks'), m('tasksS', tk.m + tk.p + tk.s), '') + tile('promo', m('promo'), m('promoS'), '') +
+        tile('badges', m('badges'), m('badgesS', badgeCount()), '') + tile('rec', m('rec'), m('recS'), '') +
+        tile('inv', m('inv'), m('invS'), '') + tile('sfx', lsGet('labirint-sfx') === '0' ? m('sfxOff') : m('sfxOn'), m('sfxS'), '') + '</div>';
     } else if (scr === 'play') {
       h += '<button type="button" id="mback" style="align-self:flex-start;flex:none">' + m('back') + '</button>';
       h += '<p class="menu-t">' + m('games') + '</p>';
       h += tile('rnd', m('rnd'), m('rndS'), 'main');
-      h += tile('pz', m('g1'), m('pzS'), '') + tile('sn', m('g2'), m('snS'), '') + tile('', m('g3'), m('soon'), '', true);
+      h += tile('pz', m('g1'), m('pzS'), '') + tile('sn', m('g2'), m('snS'), '') + tile('mem', m('mem'), m('memS'), '');
+      h += tile('lvl', m('lvl'), m('lvlS', m('lvl' + lvlN())), '');
     } else if (scr === 'wheel') {
       var wl = '', wi;
       for (wi = 0; wi < 8; wi++) wl += '<span style="transform: rotate(' + (wi * 45 + 22.5) + 'deg) translateY(-92px)">' + WVAL[wi] + '</span>';
@@ -716,7 +836,27 @@ button.ptile.ok { background: var(--tile-ok, #1F9E96); color: var(--on-accent, #
       BALLS.forEach(function (o) { h += tile('ball-' + o.id, o.n, itemSub(o, curBall().id), o.id === curBall().id ? 'main' : ''); });
       h += '<p class="menu-t">' + m('snkT') + '</p>';
       SNKS.forEach(function (o) { h += tile('snk-' + o.id, m(o.k), itemSub(o, curSnk().id), o.id === curSnk().id ? 'main' : ''); });
+      h += tile('shield', m('shield'), m('shieldS', shields(), coins() >= SHIELD_COST ? m('lifeBuy', SHIELD_COST) : m('need', SHIELD_COST)), '');
       h += tile('life', m('life'), m('lifeS', lives()) + ' · ' + (coins() >= LIFE_COST ? m('lifeBuy', LIFE_COST) : m('need', LIFE_COST)), '');
+    } else if (scr === 'tasks') {
+      var tk2 = tasksNow();
+      h += '<button type="button" id="mback" style="align-self:flex-start;flex:none">' + m('back') + '</button><p class="menu-t">' + m('tkT') + '</p>';
+      ['m', 'p', 's'].forEach(function (k) { h += tile('', m('tk_' + k), tk2[k] ? m('tkDone') : m('tkOpen'), tk2[k] ? 'main' : ''); });
+    } else if (scr === 'promo') {
+      h += '<button type="button" id="mback" style="align-self:flex-start;flex:none">' + m('back') + '</button><p class="menu-t">' + m('promoT') + '</p>';
+      h += '<input class="pin" id="pcode" type="text" autocomplete="off" autocapitalize="characters" placeholder="' + m('promoPh') + '"><button type="button" class="main" id="pgo">' + m('promoGo') + '</button><p class="wres" id="pmsg"></p>';
+    } else if (scr === 'badges') {
+      h += '<button type="button" id="mback" style="align-self:flex-start;flex:none">' + m('back') + '</button><p class="menu-t">' + m('bdT') + '</p>';
+      badgeList().forEach(function (b) { h += tile('', m(b[0]), b[1] ? m('got') : m('locked'), b[1] ? 'main' : ''); });
+    } else if (scr === 'rec') {
+      var dsr = dateSeed(), s3 = stats(), bm = bestOf('day-' + dsr.n), bp2 = bestOf('pday-' + dsr.n), bs2 = sBest('sday-' + dsr.n), mb = parseInt(lsGet('labirint-mbest'), 10);
+      h += '<button type="button" id="mback" style="align-self:flex-start;flex:none">' + m('back') + '</button><p class="menu-t">' + m('recT') + '</p>';
+      h += tile('', m('rMaze'), bm === null ? m('none') : bm.toFixed(1) + ' ' + (LANG === 'ru' ? 'сек' : 'sec'), '');
+      h += tile('', m('rPuz'), bp2 === null ? m('none') : bp2.toFixed(1) + ' ' + (LANG === 'ru' ? 'сек' : 'sec'), '');
+      h += tile('', m('rSn'), bs2 === null ? m('none') : String(bs2), '');
+      h += tile('', m('rMem'), isNaN(mb) ? m('none') : mb + ' ' + m('moves'), '');
+      h += tile('', m('rStreak'), String(loginState().count || 0), '');
+      h += tile('', m('rGames'), String((s3.mz || 0) + (s3.pz || 0) + (s3.sn || 0) + (s3.mm || 0)), '');
     } else if (scr === 'day') {
       var ds = dateSeed(), b = bestOf('day-' + ds.n);
       h += '<button type="button" id="mback" style="align-self:flex-start;flex:none">' + m('back') + '</button>';
@@ -741,7 +881,7 @@ button.ptile.ok { background: var(--tile-ok, #1F9E96); color: var(--on-accent, #
     if (sb2) sb2.addEventListener('click', function () {
       if (!wheelAvail()) return;
       var k = wheelPick(), wh = document.getElementById('wheel');
-      lsSet('labirint-wheel', String(dateSeed().n)); addCoins(WVAL[k]);
+      lsSet('labirint-wheel', String(dateSeed().n)); addCoins(WVAL[k]); incStat('sp'); setTimeout(function () { coinFloat(WVAL[k]); }, 3700);
       sb2.disabled = true;
       wheelRot = 360 * (Math.ceil(wheelRot / 360) + 5) + (360 - (k * 45 + 22.5));
       wh.style.transition = 'transform 3.6s cubic-bezier(.17,.67,.2,1)'; wh.style.transform = 'rotate(' + wheelRot + 'deg)';
@@ -750,12 +890,31 @@ button.ptile.ok { background: var(--tile-ok, #1F9E96); color: var(--on-accent, #
         var sbn = document.getElementById('spinbtn'); if (sbn) sbn.textContent = m('wheelWait', untilNext());
       }, 3700);
     });
+    var pgo = document.getElementById('pgo');
+    if (pgo) pgo.addEventListener('click', function () {
+      var c0 = (document.getElementById('pcode').value || '').trim().toUpperCase(), pm = document.getElementById('pmsg'), used = [];
+      try { used = JSON.parse(lsGet('labirint-promos')) || []; } catch (e) {}
+      if (!c0 || PROMOS[c0] === undefined) { pm.textContent = m('promoBad'); return; }
+      if (used.indexOf(c0) >= 0) { pm.textContent = m('promoUsed'); return; }
+      used.push(c0); lsSet('labirint-promos', JSON.stringify(used)); addCoins(PROMOS[c0]); coinFloat(PROMOS[c0]); sfx('coin');
+      pm.textContent = m('promoOk', PROMOS[c0]);
+    });
     var mb = document.getElementById('mback'); if (mb) mb.addEventListener('click', function () { scr = 'home'; renderMenu(); });
     var ts = box.querySelectorAll('.tile');
     for (i = 0; i < ts.length; i++) ts[i].addEventListener('click', function () {
       var id = this.getAttribute('data-id');
       if (id === 'wheel') { scr = 'wheel'; renderMenu(); }
       else if (id === 'skins') { scr = 'skins'; renderMenu(); }
+      else if (id === 'gift') { if (giftAvail()) { giftClaim(); renderMenu(); } }
+      else if (id === 'tasks' || id === 'promo' || id === 'badges' || id === 'rec') { scr = id; renderMenu(); }
+      else if (id === 'sfx') { lsSet('labirint-sfx', lsGet('labirint-sfx') === '0' ? '1' : '0'); renderMenu(); }
+      else if (id === 'lvl') { lsSet('labirint-lvl', String((lvlN() + 1) % 3)); renderMenu(); }
+      else if (id === 'mem') { showMem(true); }
+      else if (id === 'shield') { if (coins() >= SHIELD_COST) { addCoins(-SHIELD_COST); lsSet('labirint-shield', String(shields() + 1)); incStat('bu'); renderMenu(); } }
+      else if (id === 'inv') {
+        var tw3 = window.Telegram && Telegram.WebApp, lk = (tw3 && tw3.initData) ? BOT + '/' + APP + '?startapp=ref' : BOT, su = 'https://t.me/share/url?url=' + encodeURIComponent(lk) + '&text=' + encodeURIComponent(m('invTxt'));
+        try { if (tw3 && tw3.openTelegramLink) tw3.openTelegramLink(su); else window.open(su, '_blank'); } catch (e) { window.open(su, '_blank'); }
+      }
       else if (id === 'life') { if (coins() >= LIFE_COST) { addCoins(-LIFE_COST); lsSet('labirint-lives', String(lives() + 1)); renderMenu(); } }
       else if (id && (id.indexOf('ball-') === 0 || id.indexOf('snk-') === 0)) {
         var isB = id.indexOf('ball-') === 0, o2 = findIn(isB ? BALLS : SNKS, id.slice(id.indexOf('-') + 1));
@@ -776,6 +935,86 @@ button.ptile.ok { background: var(--tile-ok, #1F9E96); color: var(--on-accent, #
       else if (id === 'sn') { showSn(true, 'random'); }
       else if (id === 'snd') { showSn(true, 'daily'); }
     });
+  }
+
+  // ===== Мемори =====
+  var MEM = { cards: [], open: [], lock: false, moves: 0, t0: 0, two: false, turn: 0, sc: [0, 0], found: 0, done: false };
+  var MEMOJI = ['🍎', '🍋', '🍇', '🍒', '🐱', '🐶', '🚗', '⚽'];
+  function memStat() {
+    var el = document.getElementById('mstat');
+    el.textContent = MEM.two ? m('memP', MEM.turn + 1, MEM.sc[0] + ':' + MEM.sc[1]) : m('memMoves', MEM.moves);
+  }
+  function memNew() {
+    var a = MEMOJI.concat(MEMOJI), i, j, t0;
+    for (i = a.length - 1; i > 0; i--) { j = Math.floor(Math.random() * (i + 1)); t0 = a[i]; a[i] = a[j]; a[j] = t0; }
+    MEM.cards = a.map(function (e) { return { e: e, st: 0 }; });
+    MEM.open = []; MEM.lock = false; MEM.moves = 0; MEM.t0 = 0; MEM.turn = 0; MEM.sc = [0, 0]; MEM.found = 0; MEM.done = false;
+    document.getElementById('mres').hidden = true; document.getElementById('mtimer').textContent = '0.0';
+    document.getElementById('mtitle').textContent = m('memT'); document.getElementById('mback2').textContent = m('back');
+    document.getElementById('mmode').textContent = MEM.two ? m('mem2') : m('mem1'); document.getElementById('mnew').textContent = m('memNew');
+    memDraw(); memStat();
+  }
+  function memDraw() {
+    var g = document.getElementById('mgrid'), h = '';
+    MEM.cards.forEach(function (c, i) { h += '<button type="button" class="mcard ' + (c.st === 1 ? 'up' : (c.st === 2 ? 'ok' : '')) + '" data-i="' + i + '">' + (c.st ? c.e : '❓') + '</button>'; });
+    g.innerHTML = h;
+    var bs = g.querySelectorAll('.mcard'), k;
+    for (k = 0; k < bs.length; k++) bs[k].addEventListener('click', function () { memTap(parseInt(this.getAttribute('data-i'), 10)); });
+  }
+  function memTap(i) {
+    var c = MEM.cards[i];
+    if (MEM.lock || MEM.done || c.st) return;
+    if (!MEM.t0) MEM.t0 = performance.now();
+    c.st = 1; MEM.open.push(i); sfx('tick'); memDraw();
+    if (MEM.open.length < 2) return;
+    MEM.moves++;
+    var a = MEM.cards[MEM.open[0]], b = MEM.cards[MEM.open[1]];
+    if (a.e === b.e) {
+      a.st = 2; b.st = 2; MEM.found++; MEM.open = []; MEM.sc[MEM.turn]++; sfx('coin'); memDraw(); memStat();
+      if (MEM.found === MEMOJI.length) memFinish();
+    } else {
+      MEM.lock = true;
+      setTimeout(function () { a.st = 0; b.st = 0; MEM.open = []; MEM.lock = false; if (MEM.two) MEM.turn = 1 - MEM.turn; memDraw(); memStat(); }, 800);
+      memStat();
+    }
+  }
+  function memFinish() {
+    MEM.done = true; var r = document.getElementById('mres'), el = (performance.now() - MEM.t0) / 1000;
+    document.getElementById('mtimer').textContent = el.toFixed(1);
+    incStat('mm'); sfx('win');
+    if (MEM.two) {
+      r.textContent = MEM.sc[0] === MEM.sc[1] ? m('memTie') : m('memWin2', MEM.sc[0] > MEM.sc[1] ? 1 : 2, Math.max(MEM.sc[0], MEM.sc[1]) + ':' + Math.min(MEM.sc[0], MEM.sc[1]));
+    } else {
+      var mb = parseInt(lsGet('labirint-mbest'), 10);
+      if (isNaN(mb) || MEM.moves < mb) { lsSet('labirint-mbest', String(MEM.moves)); mb = MEM.moves; }
+      r.textContent = m('memWin1', el.toFixed(1), MEM.moves) + '. ' + m('memBest', mb);
+      reward(1);
+    }
+    r.hidden = false;
+  }
+  function showMem(on) {
+    document.getElementById('mem').hidden = !on;
+    document.getElementById('menu').hidden = on;
+    document.getElementById('game').hidden = true; document.getElementById('puz').hidden = true; document.getElementById('snk').hidden = true;
+    if (on) memNew(); else renderMenu();
+  }
+  document.getElementById('mback2').addEventListener('click', function () { showMem(false); });
+  document.getElementById('mnew').addEventListener('click', memNew);
+  document.getElementById('mmode').addEventListener('click', function () { MEM.two = !MEM.two; memNew(); });
+  setInterval(function () { if (MEM.t0 && !MEM.done) document.getElementById('mtimer').textContent = ((performance.now() - MEM.t0) / 1000).toFixed(1); }, 100);
+
+  // ===== Знакомство =====
+  function onboard() {
+    if (lsGet('labirint-onb')) return;
+    var pg = 0, E = ['🎮', '🪙', '🎨'], o = document.createElement('div'); o.className = 'onb'; document.body.appendChild(o);
+    function draw() {
+      var n = pg + 1;
+      o.innerHTML = '<div class="big">' + E[pg] + '</div><h2>' + m('onbT' + n) + '</h2><p>' + m('onbD' + n) + '</p><div class="dots">' + [0, 1, 2].map(function (i) { return '<i class="' + (i === pg ? 'on' : '') + '"></i>'; }).join('') + '</div><button type="button" class="main" id="onbn" style="min-width:200px">' + (pg < 2 ? m('onbNext') : m('onbGo')) + '</button>';
+      document.getElementById('onbn').addEventListener('click', function () {
+        if (pg < 2) { pg++; draw(); } else { lsSet('labirint-onb', '1'); o.remove(); reward(10); renderMenu(); }
+      });
+    }
+    draw();
   }
   function renderChal() {
     var c = document.getElementById('chal'), ok = challenge && lab.kind === 'daily' && challenge.no === lab.no;
@@ -883,7 +1122,7 @@ button.ptile.ok { background: var(--tile-ok, #1F9E96); color: var(--on-accent, #
   function pzWin() {
     P.won = true; P.el = (performance.now() - P.t0) / 1000;
     document.getElementById('ptimer').textContent = P.el.toFixed(1);
-    addCoins(3);
+    reward(1); taskDone('p'); incStat('pz'); sfx('win');
     var best = bestOf(P.key), isBest = best === null || P.el < best;
     if (isBest) lsSet('labirint2-best-' + P.key, String(P.el));
     if (P.mode === 'daily') { var d0 = parseFloat(lsGet('labirint-pres-' + P.no)); if (isNaN(d0) || P.el < d0) lsSet('labirint-pres-' + P.no, String(P.el)); }
@@ -910,7 +1149,7 @@ button.ptile.ok { background: var(--tile-ok, #1F9E96); color: var(--on-accent, #
   }
   function showPuz(on, mode) {
     document.getElementById('puz').hidden = !on;
-    document.getElementById('menu').hidden = on;
+    document.getElementById('menu').hidden = on; document.getElementById('mem').hidden = true;
     document.getElementById('game').hidden = true;
     document.getElementById('snk').hidden = true;
     if (on) pzNew(mode); else renderMenu();
@@ -1058,7 +1297,7 @@ button.ptile.ok { background: var(--tile-ok, #1F9E96); color: var(--on-accent, #
     var lim = eat ? Sn.body.length : Sn.body.length - 1;
     for (i = 0; i < lim; i++) if (Sn.body[i][0] === nx && Sn.body[i][1] === ny) return snOver();
     Sn.body.unshift([nx, ny]);
-    if (eat) { Sn.score++; document.getElementById('sscore').textContent = Sn.score; document.getElementById('sbestl').textContent = sn('score', Sn.score); snApple(); if (!Sn.apple) { snDraw(); return snOver(true); } }
+    if (eat) { Sn.score++; sfx('tick'); document.getElementById('sscore').textContent = Sn.score; document.getElementById('sbestl').textContent = sn('score', Sn.score); snApple(); if (!Sn.apple) { snDraw(); return snOver(true); } }
     else Sn.body.pop();
   }
   function snRevive() {
@@ -1078,7 +1317,7 @@ button.ptile.ok { background: var(--tile-ok, #1F9E96); color: var(--on-accent, #
       document.getElementById('shint').textContent = m('lifeUsed'); snDraw(); return;
     }
     Sn.state = 'over';
-    addCoins(1 + Math.floor(Sn.score / 5));
+    reward(1 + Math.floor(Sn.score / 10)); incStat('sn'); if (Sn.score >= 10) taskDone('s'); sfx('bad');
     var best = sBest(Sn.key), isBest = best === null || Sn.score > best;
     if (isBest) lsSet('labirint2-sbest-' + Sn.key, String(Sn.score));
     if (Sn.mode === 'daily') { var sk0 = 'labirint-sres-' + Sn.no + (Sn.wrap ? 'w' : ''), d0 = parseInt(lsGet(sk0), 10); if (isNaN(d0) || Sn.score > d0) lsSet(sk0, String(Sn.score)); }
@@ -1106,7 +1345,7 @@ button.ptile.ok { background: var(--tile-ok, #1F9E96); color: var(--on-accent, #
   }
   function showSn(on, mode) {
     document.getElementById('snk').hidden = !on;
-    document.getElementById('menu').hidden = on;
+    document.getElementById('menu').hidden = on; document.getElementById('mem').hidden = true;
     document.getElementById('game').hidden = true;
     document.getElementById('puz').hidden = true;
     if (on) snNew(mode); else { Sn.state = 'over'; renderMenu(); }
@@ -1159,10 +1398,11 @@ button.ptile.ok { background: var(--tile-ok, #1F9E96); color: var(--on-accent, #
     document.getElementById('game').hidden = !on;
     document.getElementById('puz').hidden = true;
     document.getElementById('snk').hidden = true;
-    document.getElementById('menu').hidden = on;
+    document.getElementById('menu').hidden = on; document.getElementById('mem').hidden = true;
     if (on) { document.getElementById('back').textContent = m('back'); renderChal(); resize(); } else { reset(false); renderMenu(); }
   }
   document.getElementById('back').addEventListener('click', function () { showGame(false); });
+  var refNew = false;
   try {
     var sp = window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.start_param;
     var mm = /^d(\d+)_(\d+)$/.exec(sp || '');
@@ -1170,10 +1410,13 @@ button.ptile.ok { background: var(--tile-ok, #1F9E96); color: var(--on-accent, #
     var mp = /^p(\d+)_(\d+)$/.exec(sp || '');
     if (mp) pChal = { no: parseInt(mp[1], 10), time: parseInt(mp[2], 10) / 10 };
     var ms2 = /^s(\d+)_(\d+)(w?)$/.exec(sp || '');
+    if (/^ref/.test(sp || '')) refNew = true;
     if (ms2) sChal = { no: parseInt(ms2[1], 10), score: parseInt(ms2[2], 10), w: ms2[3] === 'w' };
   } catch (e) {}
   applyPal(curPal());
   LANG = detect(); newMaze('daily'); applyLang(LANG); renderMenu(); requestAnimationFrame(loop);
+  if (refNew && !lsGet('labirint-ref')) { lsSet('labirint-ref', '1'); addCoins(20); setTimeout(function () { coinFloat(20); }, 600); renderMenu(); }
+  onboard();
   if (challenge && challenge.no === lab.no) showGame(true);
   else if (pChal && pChal.no === dateSeed().no) showPuz(true, 'daily');
   else if (sChal && sChal.no === dateSeed().no) { Sn.wrap = sChal.w; showSn(true, 'daily'); }
