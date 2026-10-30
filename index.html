@@ -32,7 +32,7 @@ canvas { display: block; margin: 0 auto; width: 100%; touch-action: none; user-s
 .hint { margin: 0; font-size: 14px; color: var(--muted); text-align: center; }
 .row { display: flex; flex-wrap: wrap; gap: 8px; }
 button { font: inherit; font-weight: 700; font-size: 15px; border-radius: 99px; padding: 10px 16px; cursor: pointer; border: 1px solid var(--line); background: transparent; color: var(--fg); flex: 1 1 auto; }
-button.main { background: var(--accent); border-color: var(--accent); color: #1B2230; }
+button.main { background: var(--accent); border-color: var(--accent); color: var(--on-accent, #1B2230); }
 button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .result { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
 .result h2 { font-family: var(--display); font-weight: 800; font-size: 20px; margin: 0; }
@@ -45,22 +45,30 @@ button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .row button { padding: 10px 12px; font-size: 14px; }
 .stars { font-size: 13px; font-weight: 700; color: var(--muted); text-align: right; }
 .warn { color: var(--accent); font-weight: 700; }
-button.on { background: var(--accent); border-color: var(--accent); color: #1B2230; }
+button.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent, #1B2230); }
 .langs { display: flex; flex-wrap: wrap; gap: 6px; }
 .langs button { flex: 0 0 auto; padding: 5px 12px; font-size: 13px; }
-.langs button.on { background: var(--accent); border-color: var(--accent); color: #1B2230; }
+.langs button.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent, #1B2230); }
 #menu { padding-top: 4px; }
 .tile { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; width: 100%; border-radius: 16px; padding: 14px 16px; font-size: 18px; flex: none; background: var(--panel); }
 .tile small { font-family: var(--text); font-weight: 700; font-size: 13px; color: var(--muted); }
-.tile.main small { color: #1B2230; }
+.tile.main small { color: var(--on-accent, #1B2230); }
 .tile[disabled] { opacity: .55; cursor: default; }
 .menu-t { font-family: var(--display); font-weight: 800; font-size: 20px; margin: 4px 0 0; }
 #puz .field { padding: 6px; }
 #snk canvas { touch-action: none; margin: 0 auto; }
 .pboard { position: relative; margin: 0 auto; border-radius: 12px; background: #D3D9E2; touch-action: manipulation; }
 button.ptile { position: absolute; left: 0; top: 0; display: flex; align-items: center; justify-content: center; flex: none; padding: 0; border: none; border-radius: 10px;
-  background: #F2733A; color: #fff; font-family: var(--display); font-weight: 800; box-shadow: inset 0 -4px 0 rgba(0,0,0,.18); transition: transform .12s ease; user-select: none; -webkit-user-select: none; }
-button.ptile.ok { background: #1F9E96; }
+  background: var(--tile, #F2733A); color: #fff; font-family: var(--display); font-weight: 800; box-shadow: inset 0 -4px 0 rgba(0,0,0,.18); transition: transform .12s ease; user-select: none; -webkit-user-select: none; }
+button.ptile.ok { background: var(--tile-ok, #1F9E96); color: var(--on-accent, #fff); }
+#menu .sub { margin: 0; }
+.sw { display: inline-block; width: 14px; height: 14px; border-radius: 50%; margin-right: 4px; vertical-align: -2px; border: 1px solid rgba(0,0,0,.25); }
+.wheelbox { position: relative; width: 260px; height: 260px; margin: 14px auto 6px; }
+.wheel { width: 260px; height: 260px; border-radius: 50%; border: 4px solid var(--fg); position: relative; box-sizing: border-box;
+  background: conic-gradient(var(--tile) 0 45deg, var(--accent) 45deg 90deg, var(--tile) 90deg 135deg, var(--accent) 135deg 180deg, var(--tile) 180deg 225deg, var(--accent) 225deg 270deg, var(--tile) 270deg 315deg, var(--accent) 315deg 360deg); }
+.wheel span { position: absolute; left: calc(50% - 22px); top: calc(50% - 13px); width: 44px; text-align: center; font-family: var(--display); font-weight: 800; font-size: 19px; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.65); }
+.wptr { position: absolute; top: -8px; left: 50%; margin-left: -13px; border: 13px solid transparent; border-top: 24px solid var(--fg); z-index: 2; }
+.wres { text-align: center; font-family: var(--display); font-weight: 800; font-size: 18px; min-height: 26px; margin: 0; }
 </style>
 </head>
 <body>
@@ -154,6 +162,21 @@ button.ptile.ok { background: #1F9E96; }
   var W = 7, H = 10;
   var T = 0.14, R = 0.28;           // толщина стенки и радиус шарика в клетках
   var BOT = 'https://t.me/labirint_dnya_bot', APP = 'Play', curLink = BOT, challenge = null, pChal = null, sChal = null;
+  var PALS = {
+    gold:   { cost: 0,  accent: '#F0A800', onAccent: '#1B2230', tile: '#2F5BD3', tileOk: '#F0A800', wall: '#2F5BD3', ball: '#F0A800', snake: '#2F5BD3', snakeHead: '#1E3A8A', apple: '#F0A800', leaf: '#2F5BD3', sw: ['#F0A800', '#2F5BD3'] },
+    orange: { cost: 0,  accent: '#E8622A', onAccent: '#1B2230', tile: '#F2733A', tileOk: '#1F9E96', wall: '#F2733A', ball: '#EF5B2A', snake: '#1F9E96', snakeHead: '#16756F', apple: '#EF5B2A', leaf: '#1F9E96', sw: ['#F2733A', '#1F9E96'] },
+    teal:   { cost: 40, accent: '#1F9E96', onAccent: '#FFFFFF', tile: '#1F9E96', tileOk: '#F5C242', wall: '#1F9E96', ball: '#EF5B2A', snake: '#F2733A', snakeHead: '#C2501A', apple: '#EF5B2A', leaf: '#1F9E96', sw: ['#1F9E96', '#F5C242'] },
+    violet: { cost: 80, accent: '#8B5CF6', onAccent: '#FFFFFF', tile: '#7C3AED', tileOk: '#F5C242', wall: '#7C3AED', ball: '#F5C242', snake: '#7C3AED', snakeHead: '#4C1D95', apple: '#F5C242', leaf: '#F5C242', sw: ['#8B5CF6', '#F5C242'] }
+  };
+  var PAL = PALS.gold, PALORDER = ['gold', 'orange', 'teal', 'violet'];
+  function applyPal(id) {
+    if (!PALS[id]) id = 'gold';
+    PAL = PALS[id];
+    var st = document.documentElement.style;
+    st.setProperty('--accent', PAL.accent); st.setProperty('--on-accent', PAL.onAccent);
+    st.setProperty('--tile', PAL.tile); st.setProperty('--tile-ok', PAL.tileOk);
+    try { localStorage.setItem('labirint-pal', id); } catch (e) {}
+  }
   var VMAX = 7.5;                   // максимальная скорость, клеток в секунду
   var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
   var segs = [], seed = 1, label = '', mode = 'daily', mazeKey = '';
@@ -444,6 +467,7 @@ button.ptile.ok { background: #1F9E96; }
     try { var b = parseFloat(localStorage.getItem(key)); if (!isNaN(b)) best = b; } catch (e) {}
     var isBest = best === null || fin < best;
     if (isBest) { try { localStorage.setItem(key, String(fin)); } catch (e) {} }
+    addCoins(3);
     if (lab.kind === 'daily') recordDaily(lab.no, fin);
     var chd; if (challenge && lab.kind === 'daily' && challenge.no === lab.no) chd = challenge.time - fin;
     res = { ch: chd, time: fin, base: elapsed, pen: pen, best: best, isBest: isBest, stars: starsGot };
@@ -482,7 +506,7 @@ button.ptile.ok { background: #1F9E96; }
     for (i = 0; i < segs.length; i++) {
       var g = segs[i];
       ctx.beginPath(); ctx.moveTo(g[0] * s, g[1] * s); ctx.lineTo(g[2] * s, g[3] * s);
-      ctx.strokeStyle = g[4] ? '#22304A' : '#F2733A'; ctx.lineWidth = T * s; ctx.stroke();
+      ctx.strokeStyle = g[4] ? '#22304A' : PAL.wall; ctx.lineWidth = T * s; ctx.stroke();
     }
     // подсказка: подсвечиваем следующие клетки пути, подсветка плавно гаснет
     if (hintPath) {
@@ -503,8 +527,10 @@ button.ptile.ok { background: #1F9E96; }
     }
     // шарик
     ctx.beginPath(); ctx.arc(ball.x * s, ball.y * s, R * s, 0, 6.283);
-    ctx.fillStyle = '#EF5B2A'; ctx.fill(); ctx.lineWidth = 3 * dpr; ctx.strokeStyle = '#22304A'; ctx.stroke();
-    ctx.beginPath(); ctx.arc((ball.x - 0.09) * s, (ball.y - 0.09) * s, 0.07 * s, 0, 6.283); ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.fill();
+    ctx.fillStyle = PAL.ball; ctx.fill(); ctx.lineWidth = 3 * dpr; ctx.strokeStyle = '#22304A'; ctx.stroke();
+    var bk = curBall();
+    if (bk.e) { ctx.font = Math.round(R * s * 2.1) + 'px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#000'; ctx.fillText(bk.e, ball.x * s, ball.y * s + R * s * 0.08); }
+    else { ctx.beginPath(); ctx.arc((ball.x - 0.09) * s, (ball.y - 0.09) * s, 0.07 * s, 0, 6.283); ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.fill(); }
   }
 
   // управление пальцем: относительный джойстик от точки нажатия
@@ -598,26 +624,43 @@ button.ptile.ok { background: #1F9E96; }
     ru: { play: '🎮 Играть', playS: 'Каталог игр и случайные режимы', day: '🏆 Игры дня', dayS: 'Одна карта для всех, новая в полночь по Москве',
       back: '← Меню', rnd: 'Случайный лабиринт', rndS: 'Новая карта каждый раз', soon: 'Скоро', left: 'Лабиринт дня № {a}, {b}',
       done: 'Пройдено: {a} сек. Завтра новая карта', fresh: 'Сегодня ещё не проходил', go: 'Играть', games: 'Игры', daily: 'Игры дня',
-      g1: 'Пятнашки', g2: 'Змейка', g3: 'Мемори', streak: '🔥 Серия: {a} дн.', yest: 'Вчера: {a} сек', next: 'Новая карта через {a}', h: 'ч', mi: 'мин', chal: 'Вызов друга: нужно быстрее {a} сек', won: 'Ты быстрее друга на {a} сек! 🎉', lost: 'Друг быстрее на {a} сек. Попробуй ещё!', pzS: 'Собери числа по порядку', pzd: 'Пятнашки дня № {a}, {b}', snS: 'Съедай яблоки и не врезайся', snd: 'Змейка дня № {a}, {b}', sbest: 'Рекорд: {a}' },
+      g1: 'Пятнашки', g2: 'Змейка', g3: 'Мемори', streak: '🔥 Серия: {a} дн.', yest: 'Вчера: {a} сек', next: 'Новая карта через {a}', h: 'ч', mi: 'мин', chal: 'Вызов друга: нужно быстрее {a} сек', won: 'Ты быстрее друга на {a} сек! 🎉', lost: 'Друг быстрее на {a} сек. Попробуй ещё!', pzS: 'Собери числа по порядку', pzd: 'Пятнашки дня № {a}, {b}', snS: 'Съедай яблоки и не врезайся', snd: 'Змейка дня № {a}, {b}', sbest: 'Рекорд: {a}', coins: 'Монеты', wheel: '🎡 Колесо дня', wheelS: 'Крутани раз в день и получи монеты', spin: 'Крутить', wheelWait: 'Новое вращение через {a}', wheelWon: 'Ты выиграл {a} 🪙!', skins: '🎨 Цвета', skinsS: 'Монеты открывают новые цвета игры', owned: 'Открыто', chosen: 'Выбрано ✓', need: 'Нужно {a} 🪙', buy: 'Открыть за {a} 🪙', p0: 'Золото и синий', p1: 'Оранжевый', p2: 'Бирюзовый', p3: 'Фиолетовый', ballT: 'Шарик', snkT: 'Змейка', life: '❤️ Второй шанс', lifeS: 'Один раз продолжить змейку после проигрыша. Есть: {a}', lifeBuy: 'Купить за {a} 🪙', stN: 'Стандартный', stR: 'Круглая', stB: 'Радужная', lifeUsed: 'Второй шанс! Проведи пальцем' },
     en: { play: '🎮 Play', playS: 'Game catalog and random modes', day: '🏆 Daily games', dayS: 'One map for everyone, new at midnight Moscow time',
       back: '← Menu', rnd: 'Random maze', rndS: 'A new map every time', soon: 'Soon', left: 'Maze of the Day #{a}, {b}',
       done: 'Done: {a} sec. New map tomorrow', fresh: 'Not played today yet', go: 'Play', games: 'Games', daily: 'Daily games',
-      g1: 'Sliding puzzle', g2: 'Snake', g3: 'Memory', streak: '🔥 Streak: {a} days', yest: 'Yesterday: {a} sec', next: 'New map in {a}', h: 'h', mi: 'min', chal: 'Friend challenge: beat {a} sec', won: 'You beat your friend by {a} sec! 🎉', lost: 'Your friend is faster by {a} sec. Try again!', pzS: 'Put the numbers in order', pzd: 'Sliding puzzle of the Day #{a}, {b}', snS: 'Eat apples, avoid crashes', snd: 'Snake of the Day #{a}, {b}', sbest: 'Best: {a}' },
+      g1: 'Sliding puzzle', g2: 'Snake', g3: 'Memory', streak: '🔥 Streak: {a} days', yest: 'Yesterday: {a} sec', next: 'New map in {a}', h: 'h', mi: 'min', chal: 'Friend challenge: beat {a} sec', won: 'You beat your friend by {a} sec! 🎉', lost: 'Your friend is faster by {a} sec. Try again!', pzS: 'Put the numbers in order', pzd: 'Sliding puzzle of the Day #{a}, {b}', snS: 'Eat apples, avoid crashes', snd: 'Snake of the Day #{a}, {b}', sbest: 'Best: {a}', coins: 'Coins', wheel: '🎡 Wheel of the Day', wheelS: 'Spin once a day and win coins', spin: 'Spin', wheelWait: 'Next spin in {a}', wheelWon: 'You won {a} 🪙!', skins: '🎨 Colors', skinsS: 'Coins unlock new game colors', owned: 'Unlocked', chosen: 'Selected ✓', need: 'Need {a} 🪙', buy: 'Unlock for {a} 🪙', p0: 'Gold & blue', p1: 'Orange', p2: 'Teal', p3: 'Violet', ballT: 'Ball', snkT: 'Snake', life: '❤️ Second chance', lifeS: 'Continue the snake once after a crash. You have: {a}', lifeBuy: 'Buy for {a} 🪙', stN: 'Classic', stR: 'Round', stB: 'Rainbow', lifeUsed: 'Second chance! Swipe to go' },
     uz: { play: '🎮 O‘ynash', playS: 'O‘yinlar katalogi va tasodifiy rejimlar', day: '🏆 Kun o‘yinlari', dayS: 'Hamma uchun bitta xarita, Moskva vaqti bilan yarim tunda yangisi',
       back: '← Menyu', rnd: 'Tasodifiy labirint', rndS: 'Har safar yangi xarita', soon: 'Tez orada', left: 'Kun labirinti № {a}, {b}',
       done: 'Tayyor: {a} soniya. Ertaga yangi xarita', fresh: 'Bugun hali o‘ynalmagan', go: 'O‘ynash', games: 'O‘yinlar', daily: 'Kun o‘yinlari',
-      g1: 'Beshlik jumboq', g2: 'Ilon', g3: 'Xotira', streak: '🔥 Seriya: {a} kun', yest: 'Kecha: {a} soniya', next: 'Yangi xarita: {a}', h: 'soat', mi: 'daq', chal: 'Do‘st chaqirig‘i: {a} soniyadan tezroq o‘ting', won: 'Do‘stingizdan {a} soniya tezsiz! 🎉', lost: 'Do‘stingiz {a} soniya tezroq. Yana urinib ko‘ring!', pzS: 'Raqamlarni tartibga keltiring', pzd: 'Kun beshligi № {a}, {b}', snS: 'Olmalarni yeng, urilmang', snd: 'Kun iloni № {a}, {b}', sbest: 'Rekord: {a}' },
+      g1: 'Beshlik jumboq', g2: 'Ilon', g3: 'Xotira', streak: '🔥 Seriya: {a} kun', yest: 'Kecha: {a} soniya', next: 'Yangi xarita: {a}', h: 'soat', mi: 'daq', chal: 'Do‘st chaqirig‘i: {a} soniyadan tezroq o‘ting', won: 'Do‘stingizdan {a} soniya tezsiz! 🎉', lost: 'Do‘stingiz {a} soniya tezroq. Yana urinib ko‘ring!', pzS: 'Raqamlarni tartibga keltiring', pzd: 'Kun beshligi № {a}, {b}', snS: 'Olmalarni yeng, urilmang', snd: 'Kun iloni № {a}, {b}', sbest: 'Rekord: {a}', coins: 'Tangalar', wheel: '🎡 Kun g‘ildiragi', wheelS: 'Kuniga bir marta aylantiring va tanga yuting', spin: 'Aylantirish', wheelWait: 'Keyingi aylantirish: {a}', wheelWon: 'Siz {a} 🪙 yutdingiz!', skins: '🎨 Ranglar', skinsS: 'Tangalar yangi ranglarni ochadi', owned: 'Ochilgan', chosen: 'Tanlangan ✓', need: '{a} 🪙 kerak', buy: '{a} 🪙 ga ochish', p0: 'Oltin va ko‘k', p1: 'To‘q sariq', p2: 'Zumrad', p3: 'Binafsha' },
     tg: { play: '🎮 Бозӣ', playS: 'Феҳристи бозиҳо ва ҳолатҳои тасодуфӣ', day: '🏆 Бозиҳои рӯз', dayS: 'Як харита барои ҳама, нимашаб ба вақти Маскав нав мешавад',
       back: '← Меню', rnd: 'Лабиринти тасодуфӣ', rndS: 'Ҳар дафъа харитаи нав', soon: 'Ба қарибӣ', left: 'Лабиринти рӯз № {a}, {b}',
       done: 'Тайёр: {a} сония. Пагоҳ харитаи нав', fresh: 'Имрӯз ҳанӯз бозӣ накардаед', go: 'Бозӣ', games: 'Бозиҳо', daily: 'Бозиҳои рӯз',
-      g1: 'Панҷоздаҳ', g2: 'Мор', g3: 'Хотира', streak: '🔥 Силсила: {a} рӯз', yest: 'Дирӯз: {a} сония', next: 'Харитаи нав баъди {a}', h: 'соат', mi: 'дақ', chal: 'Даъвати дӯст: аз {a} сония тезтар гузаред', won: 'Шумо аз дӯст {a} сония тезтаред! 🎉', lost: 'Дӯст {a} сония тезтар аст. Боз кӯшиш кунед!', pzS: 'Рақамҳоро ба тартиб оред', pzd: 'Панҷоздаҳи рӯз № {a}, {b}', snS: 'Себҳоро хӯред, бархӯрдан нашавед', snd: 'Морчаи рӯз № {a}, {b}', sbest: 'Рекорд: {a}' },
+      g1: 'Панҷоздаҳ', g2: 'Мор', g3: 'Хотира', streak: '🔥 Силсила: {a} рӯз', yest: 'Дирӯз: {a} сония', next: 'Харитаи нав баъди {a}', h: 'соат', mi: 'дақ', chal: 'Даъвати дӯст: аз {a} сония тезтар гузаред', won: 'Шумо аз дӯст {a} сония тезтаред! 🎉', lost: 'Дӯст {a} сония тезтар аст. Боз кӯшиш кунед!', pzS: 'Рақамҳоро ба тартиб оред', pzd: 'Панҷоздаҳи рӯз № {a}, {b}', snS: 'Себҳоро хӯред, бархӯрдан нашавед', snd: 'Морчаи рӯз № {a}, {b}', sbest: 'Рекорд: {a}', coins: 'Тангаҳо', wheel: '🎡 Чархи рӯз', wheelS: 'Рӯзе як бор гардонед ва танга баред', spin: 'Гардондан', wheelWait: 'Гардиши навбатӣ: {a}', wheelWon: 'Шумо {a} 🪙 бурдед!', skins: '🎨 Рангҳо', skinsS: 'Тангаҳо рангҳои нав мекушоянд', owned: 'Кушода', chosen: 'Интихоб шуд ✓', need: '{a} 🪙 лозим', buy: 'Кушодан бо {a} 🪙', p0: 'Тилло ва кабуд', p1: 'Норинҷӣ', p2: 'Фирӯзагӣ', p3: 'Бунафш' },
     kk: { play: '🎮 Ойнау', playS: 'Ойындар каталогы және кездейсоқ режимдер', day: '🏆 Күн ойындары', dayS: 'Бәріне бір карта, Мәскеу уақытымен түн ортасында жаңа',
       back: '← Мәзір', rnd: 'Кездейсоқ лабиринт', rndS: 'Әр жолы жаңа карта', soon: 'Жақында', left: 'Күн лабиринті № {a}, {b}',
       done: 'Дайын: {a} сек. Ертең жаңа карта', fresh: 'Бүгін әлі ойналмаған', go: 'Ойнау', games: 'Ойындар', daily: 'Күн ойындары',
-      g1: 'Бессаяқ жұмбақ', g2: 'Жылан', g3: 'Жады', streak: '🔥 Серия: {a} күн', yest: 'Кеше: {a} сек', next: 'Жаңа карта {a} кейін', h: 'сағ', mi: 'мин', chal: 'Дос шақыруы: {a} секундтан жылдам өтіңіз', won: 'Сіз доспен салыстырғанда {a} сек жылдамсыз! 🎉', lost: 'Дос {a} сек жылдамырақ. Қайтадан көріңіз!', pzS: 'Сандарды ретімен қойыңыз', pzd: 'Күн бессаяғы № {a}, {b}', snS: 'Алма жеңіз, соғылмаңыз', snd: 'Күн жыланы № {a}, {b}', sbest: 'Рекорд: {a}' }
+      g1: 'Бессаяқ жұмбақ', g2: 'Жылан', g3: 'Жады', streak: '🔥 Серия: {a} күн', yest: 'Кеше: {a} сек', next: 'Жаңа карта {a} кейін', h: 'сағ', mi: 'мин', chal: 'Дос шақыруы: {a} секундтан жылдам өтіңіз', won: 'Сіз доспен салыстырғанда {a} сек жылдамсыз! 🎉', lost: 'Дос {a} сек жылдамырақ. Қайтадан көріңіз!', pzS: 'Сандарды ретімен қойыңыз', pzd: 'Күн бессаяғы № {a}, {b}', snS: 'Алма жеңіз, соғылмаңыз', snd: 'Күн жыланы № {a}, {b}', sbest: 'Рекорд: {a}', coins: 'Тиындар', wheel: '🎡 Күн доңғалағы', wheelS: 'Күніне бір рет айналдырып, тиын ұтыңыз', spin: 'Айналдыру', wheelWait: 'Келесі айналдыру: {a}', wheelWon: 'Сіз {a} 🪙 ұттыңыз!', skins: '🎨 Түстер', skinsS: 'Тиындар жаңа түстерді ашады', owned: 'Ашық', chosen: 'Таңдалды ✓', need: '{a} 🪙 керек', buy: '{a} 🪙 үшін ашу', p0: 'Алтын және көк', p1: 'Қызғылт сары', p2: 'Көгілдір', p3: 'Күлгін' }
   };
-  function m(k, a, b) { return (MENU[LANG] || MENU.en)[k].replace('{a}', a).replace('{b}', b); }
-  var scr = 'home';
+  function m(k, a, b) { var d = MENU[LANG] || MENU.en, v = d[k]; if (v === undefined) v = MENU.en[k]; return v.replace('{a}', a).replace('{b}', b); }
+  var scr = 'home', wheelRot = 0;
+  function coins() { var v = parseInt(lsGet('labirint-coins'), 10); return isNaN(v) ? 0 : v; }
+  function addCoins(n) { lsSet('labirint-coins', String(coins() + n)); }
+  function ownedPals() { var a = []; try { a = JSON.parse(lsGet('labirint-pals')) || []; } catch (e) {} return a; }
+  function isOwned(id) { return PALS[id].cost === 0 || ownedPals().indexOf(id) >= 0; }
+  function curPal() { var c = lsGet('labirint-pal'); return PALS[c] ? c : 'gold'; }
+  var BALLS = [{id:'b0',cost:0,e:'',n:'⚪'},{id:'b1',cost:30,e:'⚽',n:'⚽'},{id:'b2',cost:30,e:'🌙',n:'🌙'},{id:'b3',cost:50,e:'🔥',n:'🔥'}];
+  var SNKS = [{id:'s0',cost:0,st:'',k:'stN'},{id:'s1',cost:30,st:'round',k:'stR'},{id:'s2',cost:60,st:'rainbow',k:'stB'}];
+  var LIFE_COST = 15;
+  function items() { var a = []; try { a = JSON.parse(lsGet('labirint-items')) || []; } catch (e) {} return a; }
+  function hasItem(o) { return o.cost === 0 || items().indexOf(o.id) >= 0; }
+  function findIn(L, id) { var i; for (i = 0; i < L.length; i++) if (L[i].id === id) return L[i]; return L[0]; }
+  function curBall() { return findIn(BALLS, lsGet('labirint-ball')); }
+  function curSnk() { return findIn(SNKS, lsGet('labirint-snk')); }
+  function lives() { var v = parseInt(lsGet('labirint-lives'), 10); return isNaN(v) ? 0 : v; }
+    var WVAL = [5, 10, 5, 15, 10, 25, 5, 50], WW = [22, 14, 22, 10, 14, 6, 22, 2];
+  function wheelAvail() { return lsGet('labirint-wheel') !== String(dateSeed().n); }
+  function wheelPick() { var t0 = WW.reduce(function (a, b) { return a + b; }, 0), x = Math.random() * t0, i; for (i = 0; i < WW.length; i++) { x -= WW[i]; if (x < 0) return i; } return 0; }
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
   function recordDaily(no, time) {
@@ -645,13 +688,35 @@ button.ptile.ok { background: #1F9E96; }
     var box = document.getElementById('menu'), h = '', i;
     h += '<div class="langs" id="mlangs"></div>';
     h += '<h1>' + t('title') + '</h1>';
+    if (scr === 'home' || scr === 'wheel' || scr === 'skins') h += '<p class="sub">🪙 ' + m('coins') + ': ' + coins() + '</p>';
     if (scr === 'home') {
       h += tile('play', m('play'), m('playS'), 'main') + tile('day', m('day'), m('dayS'), '');
+      h += tile('wheel', m('wheel'), wheelAvail() ? m('wheelS') : m('wheelWait', untilNext()), '') + tile('skins', m('skins'), m('skinsS'), '');
     } else if (scr === 'play') {
       h += '<button type="button" id="mback" style="align-self:flex-start;flex:none">' + m('back') + '</button>';
       h += '<p class="menu-t">' + m('games') + '</p>';
       h += tile('rnd', m('rnd'), m('rndS'), 'main');
       h += tile('pz', m('g1'), m('pzS'), '') + tile('sn', m('g2'), m('snS'), '') + tile('', m('g3'), m('soon'), '', true);
+    } else if (scr === 'wheel') {
+      var wl = '', wi;
+      for (wi = 0; wi < 8; wi++) wl += '<span style="transform: rotate(' + (wi * 45 + 22.5) + 'deg) translateY(-92px)">' + WVAL[wi] + '</span>';
+      h += '<button type="button" id="mback" style="align-self:flex-start;flex:none">' + m('back') + '</button>';
+      h += '<p class="menu-t">' + m('wheel') + '</p><div class="wheelbox"><div class="wptr"></div><div class="wheel" id="wheel">' + wl + '</div></div>';
+      h += '<p class="wres" id="wres"></p>';
+      h += '<button type="button" class="main" id="spinbtn"' + (wheelAvail() ? '' : ' disabled') + '>' + (wheelAvail() ? m('spin') : m('wheelWait', untilNext())) + '</button>';
+    } else if (scr === 'skins') {
+      h += '<button type="button" id="mback" style="align-self:flex-start;flex:none">' + m('back') + '</button>';
+      h += '<p class="menu-t">' + m('skins') + '</p>';
+      PALORDER.forEach(function (id, ix) {
+        var P2 = PALS[id], sub = id === curPal() ? m('chosen') : (isOwned(id) ? m('owned') : (coins() >= P2.cost ? m('buy', P2.cost) : m('need', P2.cost)));
+        h += tile('pal-' + id, '<span class="sw" style="background:' + P2.sw[0] + '"></span><span class="sw" style="background:' + P2.sw[1] + '"></span>' + m('p' + ix), sub, id === curPal() ? 'main' : '');
+      });
+      function itemSub(o, cur) { return o.id === cur ? m('chosen') : (hasItem(o) ? m('owned') : (coins() >= o.cost ? m('buy', o.cost) : m('need', o.cost))); }
+      h += '<p class="menu-t">' + m('ballT') + '</p>';
+      BALLS.forEach(function (o) { h += tile('ball-' + o.id, o.n, itemSub(o, curBall().id), o.id === curBall().id ? 'main' : ''); });
+      h += '<p class="menu-t">' + m('snkT') + '</p>';
+      SNKS.forEach(function (o) { h += tile('snk-' + o.id, m(o.k), itemSub(o, curSnk().id), o.id === curSnk().id ? 'main' : ''); });
+      h += tile('life', m('life'), m('lifeS', lives()) + ' · ' + (coins() >= LIFE_COST ? m('lifeBuy', LIFE_COST) : m('need', LIFE_COST)), '');
     } else if (scr === 'day') {
       var ds = dateSeed(), b = bestOf('day-' + ds.n);
       h += '<button type="button" id="mback" style="align-self:flex-start;flex:none">' + m('back') + '</button>';
@@ -672,11 +737,37 @@ button.ptile.ok { background: #1F9E96; }
       x.addEventListener('click', function () { applyLang(c); });
       lb.appendChild(x);
     });
+    var sb2 = document.getElementById('spinbtn');
+    if (sb2) sb2.addEventListener('click', function () {
+      if (!wheelAvail()) return;
+      var k = wheelPick(), wh = document.getElementById('wheel');
+      lsSet('labirint-wheel', String(dateSeed().n)); addCoins(WVAL[k]);
+      sb2.disabled = true;
+      wheelRot = 360 * (Math.ceil(wheelRot / 360) + 5) + (360 - (k * 45 + 22.5));
+      wh.style.transition = 'transform 3.6s cubic-bezier(.17,.67,.2,1)'; wh.style.transform = 'rotate(' + wheelRot + 'deg)';
+      setTimeout(function () {
+        var wr = document.getElementById('wres'); if (wr) wr.textContent = m('wheelWon', WVAL[k]);
+        var sbn = document.getElementById('spinbtn'); if (sbn) sbn.textContent = m('wheelWait', untilNext());
+      }, 3700);
+    });
     var mb = document.getElementById('mback'); if (mb) mb.addEventListener('click', function () { scr = 'home'; renderMenu(); });
     var ts = box.querySelectorAll('.tile');
     for (i = 0; i < ts.length; i++) ts[i].addEventListener('click', function () {
       var id = this.getAttribute('data-id');
-      if (id === 'play') { scr = 'play'; renderMenu(); }
+      if (id === 'wheel') { scr = 'wheel'; renderMenu(); }
+      else if (id === 'skins') { scr = 'skins'; renderMenu(); }
+      else if (id === 'life') { if (coins() >= LIFE_COST) { addCoins(-LIFE_COST); lsSet('labirint-lives', String(lives() + 1)); renderMenu(); } }
+      else if (id && (id.indexOf('ball-') === 0 || id.indexOf('snk-') === 0)) {
+        var isB = id.indexOf('ball-') === 0, o2 = findIn(isB ? BALLS : SNKS, id.slice(id.indexOf('-') + 1));
+        if (!hasItem(o2)) { if (coins() < o2.cost) return; addCoins(-o2.cost); var it = items(); it.push(o2.id); lsSet('labirint-items', JSON.stringify(it)); }
+        lsSet(isB ? 'labirint-ball' : 'labirint-snk', o2.id); renderMenu();
+      }
+      else if (id && id.indexOf('pal-') === 0) {
+        var pid = id.slice(4), P3 = PALS[pid];
+        if (!isOwned(pid)) { if (coins() < P3.cost) return; addCoins(-P3.cost); var op = ownedPals(); op.push(pid); lsSet('labirint-pals', JSON.stringify(op)); }
+        applyPal(pid); renderMenu();
+      }
+      else if (id === 'play') { scr = 'play'; renderMenu(); }
       else if (id === 'day') { scr = 'day'; renderMenu(); }
       else if (id === 'daily') { newMaze('daily'); showGame(true); }
       else if (id === 'rnd') { newMaze('random'); showGame(true); }
@@ -792,6 +883,7 @@ button.ptile.ok { background: #1F9E96; }
   function pzWin() {
     P.won = true; P.el = (performance.now() - P.t0) / 1000;
     document.getElementById('ptimer').textContent = P.el.toFixed(1);
+    addCoins(3);
     var best = bestOf(P.key), isBest = best === null || P.el < best;
     if (isBest) lsSet('labirint2-best-' + P.key, String(P.el));
     if (P.mode === 'daily') { var d0 = parseFloat(lsGet('labirint-pres-' + P.no)); if (isNaN(d0) || P.el < d0) lsSet('labirint-pres-' + P.no, String(P.el)); }
@@ -889,7 +981,7 @@ button.ptile.ok { background: #1F9E96; }
     if (mode === 'daily') { var ds = dateSeed(); Sn.no = ds.no; Sn.txt = ds.txt; Sn.seed = ds.n * 5 + 3; Sn.key = 'sday-' + ds.n; Sn.n = 0; }
     else { Sn.seed = Math.floor(Math.random() * 1000000) + 1; Sn.n = Sn.seed; Sn.key = 'srnd-' + Sn.seed; }
     if (Sn.wrap) Sn.key += '-w';
-    snInit(); snFit();
+    Sn.revived = false; snInit(); snFit();
   }
   function sBest(key) { try { var v = parseInt(localStorage.getItem('labirint2-sbest-' + key), 10); return isNaN(v) ? null : v; } catch (e) { return null; } }
   function snLabel() { return (Sn.mode === 'daily' ? m('snd', Sn.no, Sn.txt) : sn('rnd', Sn.n)) + ' · ' + sn(Sn.wrap ? 'mWrap' : 'mWall').replace(/^[^:]*: /, ''); }
@@ -927,14 +1019,16 @@ button.ptile.ok { background: #1F9E96; }
     for (y = 0; y < ROWS; y++) for (x = 0; x < COLS; x++) if ((x + y) % 2) sctx.fillRect(x * s, y * s, s, s);
     if (Sn.apple) {
       var ax = (Sn.apple[0] + 0.5) * s, ay = (Sn.apple[1] + 0.5) * s;
-      sctx.beginPath(); sctx.arc(ax, ay, s * 0.34, 0, 6.283); sctx.fillStyle = '#EF5B2A'; sctx.fill(); sctx.lineWidth = 2 * d; sctx.strokeStyle = '#22304A'; sctx.stroke();
-      sctx.beginPath(); sctx.ellipse(ax + s * 0.12, ay - s * 0.36, s * 0.12, s * 0.06, -0.6, 0, 6.283); sctx.fillStyle = '#1F9E96'; sctx.fill();
+      sctx.beginPath(); sctx.arc(ax, ay, s * 0.34, 0, 6.283); sctx.fillStyle = PAL.apple; sctx.fill(); sctx.lineWidth = 2 * d; sctx.strokeStyle = '#22304A'; sctx.stroke();
+      sctx.beginPath(); sctx.ellipse(ax + s * 0.12, ay - s * 0.36, s * 0.12, s * 0.06, -0.6, 0, 6.283); sctx.fillStyle = PAL.leaf; sctx.fill();
     }
     for (i = Sn.body.length - 1; i >= 0; i--) {
       var b = Sn.body[i], pad = s * 0.06;
-      sctx.fillStyle = i === 0 ? '#16756F' : '#1F9E96';
+      var sk2 = curSnk().st;
+      sctx.fillStyle = sk2 === 'rainbow' ? 'hsl(' + ((i * 28) % 360) + ',75%,50%)' : (i === 0 ? PAL.snakeHead : PAL.snake);
       sctx.beginPath();
-      if (sctx.roundRect) sctx.roundRect(b[0] * s + pad, b[1] * s + pad, s - 2 * pad, s - 2 * pad, s * 0.28); else sctx.rect(b[0] * s + pad, b[1] * s + pad, s - 2 * pad, s - 2 * pad);
+      if (sk2 === 'round') sctx.arc((b[0] + 0.5) * s, (b[1] + 0.5) * s, s * 0.44, 0, 6.283);
+      else if (sctx.roundRect) sctx.roundRect(b[0] * s + pad, b[1] * s + pad, s - 2 * pad, s - 2 * pad, s * 0.28); else sctx.rect(b[0] * s + pad, b[1] * s + pad, s - 2 * pad, s - 2 * pad);
       sctx.fill();
     }
     if (Sn.body.length) {
@@ -944,7 +1038,7 @@ button.ptile.ok { background: #1F9E96; }
         sctx.beginPath(); sctx.arc(cx + ex * s * 0.2 + px * sg * s * 0.18, cy + ey * s * 0.2 + py * sg * s * 0.18, s * 0.045, 0, 6.283); sctx.fillStyle = '#22304A'; sctx.fill();
       });
     }
-    sctx.lineWidth = 3 * d; sctx.strokeStyle = Sn.wrap ? '#1F9E96' : '#22304A'; sctx.setLineDash(Sn.wrap ? [8 * d, 6 * d] : []);
+    sctx.lineWidth = 3 * d; sctx.strokeStyle = Sn.wrap ? PAL.snake : '#22304A'; sctx.setLineDash(Sn.wrap ? [8 * d, 6 * d] : []);
     sctx.strokeRect(1.5 * d, 1.5 * d, scv.width - 3 * d, scv.height - 3 * d); sctx.setLineDash([]);
   }
   function snTurn(dx, dy) {
@@ -964,11 +1058,27 @@ button.ptile.ok { background: #1F9E96; }
     var lim = eat ? Sn.body.length : Sn.body.length - 1;
     for (i = 0; i < lim; i++) if (Sn.body[i][0] === nx && Sn.body[i][1] === ny) return snOver();
     Sn.body.unshift([nx, ny]);
-    if (eat) { Sn.score++; document.getElementById('sscore').textContent = Sn.score; document.getElementById('sbestl').textContent = sn('score', Sn.score); snApple(); if (!Sn.apple) { snDraw(); return snOver(); } }
+    if (eat) { Sn.score++; document.getElementById('sscore').textContent = Sn.score; document.getElementById('sbestl').textContent = sn('score', Sn.score); snApple(); if (!Sn.apple) { snDraw(); return snOver(true); } }
     else Sn.body.pop();
   }
-  function snOver() {
+  function snRevive() {
+    var h = Sn.body[0], ds = [[1,0],[-1,0],[0,1],[0,-1]], i, j, k, ok;
+    for (k = 0; k < 4; k++) {
+      var nx = h[0] + ds[k][0], ny = h[1] + ds[k][1];
+      if (Sn.wrap) { nx = (nx + COLS) % COLS; ny = (ny + ROWS) % ROWS; }
+      else if (nx < 0 || ny < 0 || nx >= COLS || ny >= ROWS) continue;
+      ok = true; for (j = 0; j < Sn.body.length - 1; j++) if (Sn.body[j][0] === nx && Sn.body[j][1] === ny) ok = false;
+      if (ok) { Sn.dir = ds[k]; Sn.q = []; return true; }
+    }
+    return false;
+  }
+  function snOver(noRevive) {
+    if (!noRevive && !Sn.revived && lives() > 0 && Sn.state === 'run' && snRevive()) {
+      lsSet('labirint-lives', String(lives() - 1)); Sn.revived = true; Sn.state = 'wait';
+      document.getElementById('shint').textContent = m('lifeUsed'); snDraw(); return;
+    }
     Sn.state = 'over';
+    addCoins(1 + Math.floor(Sn.score / 5));
     var best = sBest(Sn.key), isBest = best === null || Sn.score > best;
     if (isBest) lsSet('labirint2-sbest-' + Sn.key, String(Sn.score));
     if (Sn.mode === 'daily') { var sk0 = 'labirint-sres-' + Sn.no + (Sn.wrap ? 'w' : ''), d0 = parseInt(lsGet(sk0), 10); if (isNaN(d0) || Sn.score > d0) lsSet(sk0, String(Sn.score)); }
@@ -1062,6 +1172,7 @@ button.ptile.ok { background: #1F9E96; }
     var ms2 = /^s(\d+)_(\d+)(w?)$/.exec(sp || '');
     if (ms2) sChal = { no: parseInt(ms2[1], 10), score: parseInt(ms2[2], 10), w: ms2[3] === 'w' };
   } catch (e) {}
+  applyPal(curPal());
   LANG = detect(); newMaze('daily'); applyLang(LANG); renderMenu(); requestAnimationFrame(loop);
   if (challenge && challenge.no === lab.no) showGame(true);
   else if (pChal && pChal.no === dateSeed().no) showPuz(true, 'daily');
